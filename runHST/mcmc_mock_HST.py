@@ -6,7 +6,7 @@ _num_procs = 16
 
 # These are additional parameters for the MCMC fitter. Number of iterations,
 # number of burn-in iterations (which are discarded)
-_mcparams = {'burn': 1000, 'iterations': 1000, 'chains': 200}
+_mcparams = {'burn': 800, 'iterations': 800, 'chains': 100}
 
 
 def run_mcmc(model_file):

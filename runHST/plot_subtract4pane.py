@@ -14,19 +14,27 @@ from matplotlib import rc
 rc('font', family='serif')
 
 #_stamp_pat = '../data/sci_CFHQS-J0033-0125_H.fits.gz'#sci_mock_{}.fits'
+
 _stamp_pat = '../data/sci_mock_{}.fits'
 _model_pat = 'mcmc_out_mock_{}_convolved_model.fits'
 _mask_pat = '../data/region.reg'
 _psfresid_pat = 'mcmc_out_mock_{}_point_source_subtracted.fits'
 _rawmodel_pat = 'mcmc_out_mock_{}_raw_model.fits'
 _resid_pat = 'mcmc_out_mock_{}_residual.fits'
+#_stamp_pat = '../data/sci_mock_{}.fits'
+#_model_pat = 'mcmc_out_convolved_model.fits'
+#_mask_pat = '../data/region.reg'
+#_psfresid_pat = 'mcmc_out_point_source_subtracted.fits'
+#_rawmodel_pat = 'mcmc_out_raw_model.fits'
+#_resid_pat = 'mcmc_out_residual.fits'
 _mag_zp = {'F125W': 26.2303, 'F160W': 25.9463}
 
 _stretch = AsinhStretch()
 _stretch.a = (0.5 - 0.005)/2 / (0.5+0.005)
 _pnorm = ImageNormalize(vmin=-0.005, vmax=0.5, stretch=_stretch, clip=True)
-_axis_range = [-3.4,3.4,-3.4,3.4]#[-4,4,-4,4]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
-_xytix = [-3,-2, -1, 0, 1, 2,3]  # in arcsec
+_axis_range = [-2,2,-2,2]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
+#_xytix = [-3,-2, -1, 0, 1, 2,3]  # in arcsec
+_xytix = [-1, 0, 1]  # in arcsec
 _coltix = np.array([23, 24, 25, 26])  # in mag/arcsec**2
 
 gray_r = pp.cm.cmap_d['nipy_spectral']
