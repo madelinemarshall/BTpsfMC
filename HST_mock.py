@@ -50,7 +50,7 @@ def plot_host(data,axes,f,dust=False):
   return
 
 
-def plot_host_quasar(data,Lquasar,axes,err_axes,f,dust=False,colorbar=False):
+def plot_host_quasar(data,Lquasar,axes,err_axes,f,dust=False,title=None):
   Lquasar*=4
   print('Fquasar (nJy) ',Lquasar)
   imgs = {}
@@ -102,15 +102,33 @@ super_sampling=super_samp).particle(np.array([0.]), np.array([0.]), np.array([Lq
   img2 = err_axes.imshow(ivm,cmap='magma', norm=LogNorm(vmin = min_var, vmax=mx_var))#, vmin = mx -3, vmax=mx)
  
   hdu=fits.PrimaryHDU(img_data+img_bkg_data)
-  hdu.writeto('data/sci_mock_HST.fits',overwrite=True)
-  
   #err=0
   #uncertainty=1+err*np.random.standard_normal(np.shape(img_data))
   #data_sigma=data_sigma*uncertainty
   hdu_ivm=fits.PrimaryHDU(ivm)
   #hdu_ivm=fits.PrimaryHDU(np.ones_like(data_sigma))
-  hdu_ivm.writeto('data/ivm_mock_HST.fits',overwrite=True)
 
+  if onlyHost:
+    if title:
+      hdu.writeto('data/sci_mock_HST_{}_onlyHost.fits'.format(title),overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_HST_{}_onlyHost.fits'.format(title),overwrite=True)
+    else:
+      hdu.writeto('data/sci_mock_HST_{}_onlyHost.fits',overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_HST_{}_onlyHost.fits',overwrite=True)
+  elif host:
+    if title:
+      hdu.writeto('data/sci_mock_HST_{}_host.fits'.format(title),overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_HST_{}_host.fits'.format(title),overwrite=True)
+    else:
+      hdu.writeto('data/sci_mock_HST_host.fits',overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_HST_host.fits',overwrite=True)
+  else:
+    if title:
+      hdu.writeto('data/sci_mock_HST_{}.fits'.format(title),overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_HST_{}.fits'.format(title),overwrite=True)
+    else:
+      hdu.writeto('data/sci_mock_HST.fits',overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_HST.fits',overwrite=True)
   axes.set_facecolor('black')
 
   cax1 = fig.add_axes([0.9, 0.11, 0.02, 0.77])
@@ -242,9 +260,16 @@ if __name__=='__main__':
 
     #Quasar sample setup
     ###NOTE: Need to extract these numbers from BH_spectra_z7_dust
-    BHsamples=['SDSS_AGN_dust/9'] 
-    tau_UV=[1.165] #Min tau UV for MMBH, CO, WFIRST
+    #BHsamples=['SDSS_AGN_dust/9'] 
+    #tau_UV=[1.165] #Min tau UV for MMBH, CO, WFIRST
+    #dust_atten=np.exp(-np.array(tau_UV))#Need metallicity factor
+    BHsamples=['MMBHs/106','SDSS_AGN_dust/9','CO_AGN_dust/251','WFIRST_AGN_dust/684'] 
+    titles=['MMBH','SDSS','CO','WFIRST']
+    tau_UV=[0.18,1.165,0.452,0.857] #Min tau UV for MMBH, CO, WFIRST
     dust_atten=np.exp(-np.array(tau_UV))#Need metallicity factor
+    
+    host=False
+    onlyHost=False
 
     orientation='face_on'#None,'face_on','edge_on'    # Initialise background(s)
 
@@ -260,7 +285,7 @@ if __name__=='__main__':
       data = SynthObs.bluetides_data('PIG_208/processed_data/'+str(BH),dust=True)
       data=get_positions(data,orientation)
       Fquasar=load_quasar(folder+str(BH)+'/run_cloudy.con',filters[0],F)
-      plot_host_quasar(data,Fquasar*dust_atten[ii],axes,err_axes,filters[0],dust=True,colorbar=True)
+      plot_host_quasar(data,Fquasar*dust_atten[ii],axes,err_axes,filters[0],dust=True,title=titles[ii])
  
     #plt.savefig('/home/mmarshal/results/plots/BTpsfMC/mock_HST.pdf')
     plt.show()

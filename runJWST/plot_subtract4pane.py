@@ -45,7 +45,7 @@ def mag_to_flux(mag, zp=0.0, scale=(1.0, 1.0)):
 
 
 def plot_models(quasar, save_name=None):
-    qdir = quasar+'_onlyHost'#.split('_', 1)[0]
+    qdir = 'JWST_F200W_'+quasar.split('_',1)[1]+'_onlyHost'
     stamp = fits.getdata(_stamp_pat.format(qdir))
     #stamp = fits.getdata(_stamp_pat)
     wcs = WCS(fits.getheader(_stamp_pat.format(qdir)))
@@ -112,7 +112,7 @@ def plot_models(quasar, save_name=None):
 if __name__ == '__main__':
     from sys import argv
     # import glob
-    to_plot = ['HST_MMBH','HST_SDSS','HST_CO','HST_WFIRST']
+    to_plot = ['JWST_MMBH','JWST_SDSS','JWST_CO','JWST_WFIRST']
     #to_plot = ['JWST_PSFx15','JWST_PSFx10','JWST_PSFx5','JWST_PSFx1']
     #to_plot = ['JWST_F090W','JWST_F115W','JWST_F150W','JWST_F277W','JWST_F356W','JWST_F444W']
     #to_plot = ['JWST_F200W_0p01','JWST_F200W_0p05']

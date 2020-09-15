@@ -19,7 +19,7 @@ def run_mcmc(model_file,ext):
 
 if __name__ == '__main__':
     for ext in _extensions:
-      model_files = glob.glob('mcmc_model_mock_HST_{}.py'.format(ext))
+      model_files = glob.glob('mcmc_model_mock_JWST_{}.py'.format(ext))
       print(model_files)        
       pool = Pool(_num_procs)
 

@@ -146,6 +146,7 @@ def load_quasar(filename,f,F):
 
     ##Need to mock Lyman-forest extinction on the redshifted galaxy spectra
     wave=np.array(dt['lambda']*1e4*(1+z)) #angstrom
+    print(wave)
     extcurve = etau_madau(wave, z)
     extinct_q=extcurve(wave)
     extinct_q[wave<10**3.5]=0 #This has an upturn at low-lambda - manually get rid of this
@@ -216,7 +217,7 @@ def face_on(p,mass,th=-1,centre=None): # p in [[x1,y1,z1],[x2,y2,z2],...]
 if __name__=='__main__':
     #Setup
     cosmo = FLARE.default_cosmo()
-    z = 6
+    z = 7
 
     dust=True
     model = models.define_model('BPASSv2.2.1.binary/ModSalpeter_300') # DEFINE SED GRID -
@@ -258,14 +259,7 @@ if __name__=='__main__':
     r = aperture_radius/pixel_scale # aperture radius in pixels
 
     #Quasar sample setup
-    ###NOTE: Need to extract these numbers from BH_spectra_z7_dust
-    BHsamples=['MMBHs/106','SDSS_AGN_dust/9','CO_AGN_dust/251','WFIRST_AGN_dust/684'] 
-    titles=['MMBH','SDSS','CO','WFIRST']
-    tau_UV=[0.18,1.165,0.452,0.857] #Min tau UV for MMBH, CO, WFIRST
-    #BHsamples=['SDSS_AGN_dust/9'] 
-    #titles=[None]#['SDSS']
-    #tau_UV=[1.165] #Min tau UV for MMBH, CO, WFIRST
-    dust_atten=np.exp(-np.array(tau_UV))#Need metallicity factor
+    sample='SDSS'
 
     orientation='face_on'#None,'face_on','edge_on'    # Initialise background(s)
 
@@ -274,15 +268,30 @@ if __name__=='__main__':
 
     folder='/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/'
 
-    fig, axes = plt.subplots(1,1, figsize = (5,5))
-    err_fig, err_axes = plt.subplots(1,1, figsize = (5,5))
+    df=pd.read_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase.pkl')
+    
+    num_samps=len(df.loc[(df['Sample']==sample)])
+    
+    
+       
+    for ii in range(0,num_samps):
+      fig, axes = plt.subplots(1,1, figsize = (5,5))
+      err_fig, err_axes = plt.subplots(1,1, figsize = (5,5))
+    
+      index=df.loc[(df['Sample']==sample)].iloc[ii]['Index']
+      if index!=41:
+        tau_UV=df.loc[(df['Sample']==sample)].iloc[ii]['tau_UV_AGN']
+        dust_atten=np.exp(tau_UV)
 
-    for ii,BH in enumerate(BHsamples):
-      data = SynthObs.bluetides_data('PIG_208/processed_data/'+str(BH),dust=True)
-      data=get_positions(data,orientation)
-      Fquasar=load_quasar(folder+str(BH)+'/run_cloudy.con',filters[0],F)
-      plot_host_quasar(data,Fquasar*dust_atten[ii],axes,err_axes,filters[0],dust=True,title=titles[ii])
+        BH=sample+'_AGN_dust/'+str(index)
+        print(BH,tau_UV)
+
+
+        data = SynthObs.bluetides_data('PIG_208/processed_data/'+str(BH),dust=True)
+        data=get_positions(data,orientation)
+        Fquasar=load_quasar(folder+str(BH)+'/run_cloudy.con',filters[0],F)
+        plot_host_quasar(data,Fquasar*dust_atten,axes,err_axes,filters[0],dust=True,title=sample+'_'+str(index))
  
     #plt.savefig('/home/mmarshal/results/plots/BTpsfMC/mock_F200W.pdf')
-    plt.show()
+    #plt.show()
 
