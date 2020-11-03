@@ -51,7 +51,7 @@ def plot_host(data,axes,f,dust=False):
 
 
 def plot_host_quasar(data,Lquasar,axes,err_axes,f,dust=False,title=None):
-  Lquasar*=4
+  #Lquasar*=4
   print('Fquasar (nJy) ',Lquasar)
   imgs = {}
 

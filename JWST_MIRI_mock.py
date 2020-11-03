@@ -23,6 +23,7 @@ from photutils import CircularAperture
 from matplotlib.colors import LogNorm
 from astropy.io import fits
 from astropy.modeling.functional_models import Gaussian2D
+
 matplotlib.rcParams['font.size'] = (9)
 matplotlib.rcParams['figure.figsize'] = (7.3,7.3)
 plt.rc('text', usetex=True)
@@ -86,15 +87,11 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
   
   full_img = img_data * exp_time
   noisy_full_img = np.random.poisson(full_img)
-  #fig2,ax2=plt.subplots(1,2)
-  #ax2[0].imshow(full_img,cmap='magma', norm=LogNorm(vmin = 1e-3, vmax=1e4))
-  #ax2[1].imshow(noisy_full_img,cmap='magma', norm=LogNorm(vmin = 1e-3, vmax=1e4))
   img_data = noisy_full_img / exp_time
-  #ax2[1].imshow(img_data,cmap='magma', norm=LogNorm(vmin = mx/10000, vmax=mx))
-  #data_sigma=np.sqrt(img_data)
   
   y,x=np.mgrid[0:len(img_bkg.bkg),0:len(img_bkg.bkg)]
   gauss=Gaussian2D(np.max(img_data)/5000,len(img_bkg.bkg)/2-1.5,len(img_bkg.bkg)/2-1.5,2,2)(x,y)
+  print(np.max(img_data)/5000)
   print('Center loc: ',len(img_bkg.bkg)/2-1.5) 
   ivm=1/((bkg_sigma*super_samp)**2+(gauss))
   var=1/ivm
@@ -102,7 +99,7 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
   mx_var=np.amax(ivm)
  
   img1 = axes.imshow(img_data+img_bkg_data,cmap='magma', norm=LogNorm(vmin = mx/10000, vmax=mx))
-  img2 = err_axes.imshow(ivm,cmap='magma', norm=LogNorm(vmin = mx_var/1e5, vmax=mx_var/10))#, vmin = mx -3, vmax=mx)
+  img2 = err_axes.imshow(ivm,cmap='magma', norm=LogNorm(vmin = mx_var/100, vmax=mx_var))#, vmin = mx -3, vmax=mx)
  
   hdu=fits.PrimaryHDU(img_data+img_bkg_data)
   hdu_ivm=fits.PrimaryHDU(ivm)
@@ -233,7 +230,7 @@ if __name__=='__main__':
     host=True
     onlyHost=False
 
-    filters = [FLARE.filters.NIRCam_W[4]]
+    filters = [FLARE.filters.MIRI[0]]
     filt_str=(filters[0].split('.')[-1])
     print('filter: ',filt_str)
     F = FLARE.filters.add_filters(filters, new_lam = model.lam* (1.+z))
@@ -257,9 +254,7 @@ if __name__=='__main__':
     zeropoint = 25.946              # AB mag zeropoint, doesn't have any effect
     nJy_to_es = 1E-9 * 10**(0.4*(zeropoint-8.9))
     exp_time=10000
-    aperture_flux_limits={'JWST.NIRCAM.F090W':15.3, 'JWST.NIRCAM.F115W':13.2,
-       'JWST.NIRCAM.F150W':10.6, 'JWST.NIRCAM.F200W':9.1, 'JWST.NIRCAM.F277W':14.3, 
-       'JWST.NIRCAM.F356W':12.1, 'JWST.NIRCAM.F444W':23.6} #sensitivity at 10ks in nJy, 10 sigma
+    aperture_flux_limits={'JWST.MIRI.F560W':130, 'JWST.NIRCAM.F115W':13.2}
     aperture_f_limit = aperture_flux_limits[filters[0]]
     ap_sig = 10
     #https://jwst-docs.stsci.edu/near-infrared-camera/nircam-predicted-performance/nircam-sensitivity
@@ -267,9 +262,9 @@ if __name__=='__main__':
 
     #Quasar sample setup
     ###NOTE: Need to extract these numbers from BH_spectra_z7_dust
-    BHsamples=['MMBHs/106','SDSS_AGN_dust/9','CO_AGN_dust/251','WFIRST_AGN_dust/684'] 
-    titles=['MMBH','SDSS','CO','WFIRST']
-    tau_UV=[0.18,1.165,0.452,0.857] #Min tau UV for MMBH, CO, WFIRST
+    BHsamples=['SDSS_AGN_dust/9'] 
+    titles=['SDSS']
+    tau_UV=[1.165] #Min tau UV for MMBH, CO, WFIRST
     #BHsamples=['SDSS_AGN_dust/9'] 
     #titles=[None]#['SDSS']
     #tau_UV=[1.165] #Min tau UV for MMBH, CO, WFIRST
