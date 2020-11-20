@@ -26,7 +26,7 @@ _pnorm = ImageNormalize(vmin=-0.00005, vmax=0.05, stretch=_stretch, clip=True)
 _axis_range = [-0.6,0.6,-0.6,0.6]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
 #_xytix = [-3,-2, -1, 0, 1, 2,3]  # in arcsec
 _xytix = [-0.5, 0, 0.5]  # in arcsec
-_coltix = np.array([23, 24, 25, 26])  # in mag/arcsec**2
+_coltix = np.array([26,27,28])  # in mag/arcsec**2
 
 gray_r = pp.cm.cmap_d['Spectral_r']
 
@@ -52,8 +52,8 @@ def plot_models(quasar, filt, save_name=None):
    
    
     #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
-    resid_smooth = gaussian_filter(psfresid, (2, 2))
-    true_smooth = gaussian_filter(trueHost, (2, 2))
+    resid_smooth = gaussian_filter(psfresid, (1, 1))
+    true_smooth = gaussian_filter(trueHost, (1, 1))
 
     center = np.array(psfresid.shape)[::-1]/2
     if filt in ['F277W','F356W','F444W']:
@@ -65,11 +65,8 @@ def plot_models(quasar, filt, save_name=None):
     extents = np.array([-center[0], center[0],
                -center[1], center[1]])*pxscale
 
-    #plot_panels = [psfresid, 'Point Source\nSubtracted']
-    plot_panels = [resid_smooth, 'Point Source\nSubtracted']
-
-    #for ind,data in enumerate([resid_smooth,true_smooth]):
-    for ind,data in enumerate([psfresid,trueHost]):
+    for ind,data in enumerate([resid_smooth,true_smooth]):
+    #for ind,data in enumerate([psfresid,trueHost]):
       if ind==0:
         grid_ind=ii
         grid[grid_ind].set_title(filt)
@@ -81,8 +78,8 @@ def plot_models(quasar, filt, save_name=None):
       grid[grid_ind].axis(_axis_range)
     
       ticks = mag_to_flux(_coltix, zp=_mag_zp, scale=pxscale)
-      cbar = pp.colorbar(im, cax=grid.cbar_axes[0])#, ticks=ticks)
-    #cbar.set_ticklabels(_coltix)
+      cbar = pp.colorbar(im, cax=grid.cbar_axes[0], ticks=ticks)
+    cbar.set_ticklabels(_coltix)
     grid.cbar_axes[0].set_ylabel('mag arcsec$^{-2}$')
     grid.cbar_axes[0].set_xlabel('mag arcsec$^{-2}$')
 

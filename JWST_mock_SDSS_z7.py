@@ -50,7 +50,7 @@ def plot_host(data,axes,f,dust=False):
   return
 
 
-def plot_host_quasar(data,Lquasar,axes,err_axes,f,exp_time,dust=False,title=None):
+def plot_host_quasar(data,Lquasar,axes,err_axes,f,exp_time,ii,dust=False,title=None):
   #Lquasar*=4
   #print('Fquasar (nJy) ',Lquasar)
 
@@ -60,6 +60,8 @@ def plot_host_quasar(data,Lquasar,axes,err_axes,f,exp_time,dust=False,title=None
     Fnu = models.generate_Fnu_array(model, data.Masses, data.Ages, data.Metallicities, (10**model.dust['A'])*data.MetSurfaceDensities, F, f)  # arrays of star particle fluxes in nJy
   else:
     Fnu = models.generate_Fnu_array(model, data.Masses, data.Ages, data.Metallicities, np.zeros_like(data.Masses), F, f) # arrays of star particle fluxes in nJy
+
+  df.loc[ii,filt_str+' Flux']=np.sum(Fnu*nJy_to_es)
 
   super_samp=2
 
@@ -113,7 +115,8 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
   hdu=fits.PrimaryHDU(img_data+img_bkg_data)
   hdu_ivm=fits.PrimaryHDU(ivm)
   #hdu_ivm=fits.PrimaryHDU(np.ones_like(data_sigma)*10000)
-  
+ 
+  """ 
   if onlyHost:
     if title:
       if exp_time==10000:
@@ -143,7 +146,7 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
     else:
       hdu.writeto('data/sci_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
       hdu_ivm.writeto('data/ivm_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
-
+  """
   axes.set_facecolor('black')
 
   cax1 = fig.add_axes([0.9, 0.11, 0.02, 0.77])
@@ -277,7 +280,7 @@ if __name__=='__main__':
     aperture_radius = 2.5*pixel_scale         # aperture radius in arcsec
     zeropoint = 25.946              # AB mag zeropoint, doesn't have any effect
     nJy_to_es = 1E-9 * 10**(0.4*(zeropoint-8.9))
-    exp_time = 5000
+    exp_time = 10000
     if exp_time==10000:
       aperture_flux_limits={'JWST.NIRCAM.F090W':15.3, 'JWST.NIRCAM.F115W':13.2,
        'JWST.NIRCAM.F150W':10.6, 'JWST.NIRCAM.F200W':9.1, 'JWST.NIRCAM.F277W':14.3, 
@@ -317,9 +320,8 @@ if __name__=='__main__':
     folder='/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/'
 
     df=pd.read_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase.pkl')
-    
     num_samps=len(df.loc[(df['Sample']==sample)])
-    
+    df[filt_str+' Flux']=np.zeros(len(df))
     
        
     for ii in range(0,num_samps):
@@ -338,8 +340,10 @@ if __name__=='__main__':
         data = SynthObs.bluetides_data('PIG_208/processed_data/'+str(BH),dust=True)
         data=get_positions(data,orientation)
         Fquasar=load_quasar(folder+str(BH)+'/run_cloudy.con',filters[0],F)
-        plot_host_quasar(data,Fquasar*dust_atten,axes,err_axes,filters[0],exp_time,dust=True,title=sample+'_'+str(index))
+        plot_host_quasar(data,Fquasar*dust_atten,axes,err_axes,filters[0],exp_time,ii,dust=True,title=sample+'_'+str(index))
       plt.close()
+    
+    df.to_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase.pkl')
  
     #plt.savefig('/home/mmarshal/results/plots/BTpsfMC/mock_F200W.pdf')
     #plt.show()

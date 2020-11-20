@@ -65,118 +65,71 @@ def mag_to_flux(mag, zp=0.0, scale=(1.0, 1.0)):
 
 
 def plot_models(quasar, save_name=None):
-    if HST:
-      _quasar_pat = 'data/sci_mock_{}_onlyHost.fits'
-      quasar = 'HST_SDSS_' + str(quasar)
-      qdir = 'HST_f160w_'+quasar.split('_',1)[1]#+'_host'
-      psf = fits.open('data/sci_PSF_HST_f160w_SN.fits')[0].data
-      pxscale = 0.13/2 #arcsec
-      _psfresid_pat=_psfresid_pat_H
-      area_fact=0.0569
-      ttle='HST'
-      mark=r'$\times$'
-      mark_col='red'
-    
-    else:
-      _quasar_pat = 'data/sci_mock_{}_onlyHost_4800s.fits'
-      quasar = 'JWST_SDSS_' + str(quasar)
-      qdir = 'JWST_F150W_'+quasar.split('_',1)[1]#+'_host'
-      psf = fits.open('data/sci_PSF_JWST_F150W_SN_4800s.fits')[0].data
-      pxscale = 0.031/2
-      _psfresid_pat=_psfresid_pat_J
-      area_fact=1
-      ttle='JWST'
-      mark=r'$\checkmark$'
-      mark_col='limegreen'
-
-    if trueImage:
-      ttle+='\nTrue Image'
-      psfresid = fits.getdata(_quasar_pat.format(qdir))
-    elif convolved: 
-      raw_model = fits.open(_psfresid_pat.format(quasar)[:-28]+'raw_model.fits')[0].data
-      convolved_model = make_convolved(raw_model,psf)
-      ttle+='\nSersic Model'
-      psfresid = convolved_model#fits.getdata(_psfresid_pat.format(quasar))
-    else:
-      ttle+='\nSubtracted Image'
-      psfresid = fits.getdata(_psfresid_pat.format(quasar))
-   
+    _quasar_pat = 'data/sci_mock_{}_onlyHost.fits'
+    quasar = 'JWST_SDSS_' + str(quasar)
+    qdir = 'JWST_F200W_'+quasar.split('_',1)[1]#+'_host'
+    psf = fits.open('data/sci_PSF_JWST_F200W_SN.fits')[0].data
+    pxscale = 0.031/2
+    _psfresid_pat=_psfresid_pat_J
+    area_fact=1
     filt = 'F160W'
-    #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
-    psfresid_smooth = gaussian_filter(psfresid, (1, 1))
 
-    center = np.array(psfresid.shape)[::-1]/2
+    true = fits.getdata(_quasar_pat.format(qdir))
+      
+    raw_model = fits.open(_psfresid_pat.format(quasar)[:-28]+'raw_model.fits')[0].data
+    convolved_model = make_convolved(raw_model,psf)
+    subtrac = fits.getdata(_psfresid_pat.format(quasar))
+    resid = fits.open(_psfresid_pat.format(quasar)[:-28]+'residual.fits')[0].data
+
+    psfresids=[(subtrac,'PSF Subtracted'),(convolved_model,'Sersic Model'),(true,'True Image'),(resid,'Model Subtracted')]  
+   
+    ii=0
+    for psfresid,ttle in psfresids:
+      #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
+      psfresid_smooth = gaussian_filter(psfresid, (1, 1))
+
+      center = np.array(psfresid.shape)[::-1]/2
     
-    extents = np.array([-center[0], center[0],
+      extents = np.array([-center[0], center[0],
                -center[1], center[1]])*pxscale
 
-    #plot_panels = [psfresid, 'Point Source\nSubtracted']
-    plot_panels = [psfresid_smooth, 'Point Source\nSubtracted']
-    flx = plot_panels[0]*area_fact #puts HST on the same vertical scale (bigger pixels -> volume different).
+      #plot_panels = [psfresid, 'Point Source\nSubtracted']
+      plot_panels = [psfresid_smooth, 'Point Source\nSubtracted']
+      flx = plot_panels[0]*area_fact #puts HST on the same vertical scale (bigger pixels -> volume different).
 
-    im = grid[ii].imshow(flx, extent=extents,
+      im = grid[ii].imshow(flx, extent=extents,
                                origin='lower',
                                cmap=gray_r, norm=_pnorm,
                                interpolation='nearest')
-    grid[ii].axis(_axis_range)
+      grid[ii].axis(_axis_range)
+      grid[ii].set_title(ttle,fontsize=10)
+      ii+=1
     
     ticks = mag_to_flux(_coltix, zp=_mag_zp[filt], scale=pxscale)
     cbar = pp.colorbar(im, cax=grid.cbar_axes[0], ticks=ticks)
     cbar.set_ticklabels(_coltix)
     grid.cbar_axes[0].set_ylabel('mag arcsec$^{-2}$')
     grid.cbar_axes[0].set_xlabel('mag arcsec$^{-2}$')
-    if ii<6:
-       grid[ii].set_title(ttle,fontsize=10)
-    if convolved:
-       grid[ii].text(0.35,-0.55,mark,color=mark_col,fontsize=20)
     #grid[ii].set_title(quasar)
 
 if __name__ == '__main__':
     from sys import argv
     # import glob
-    to_plot = [2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  20,  22,  23,  25,  27,  32,  36,  40,  43,  45,  46, 100]
+    #to_plot = [2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  20,  22,  23,  25,  27,  32,  36,  40,  43,  45,  46, 100]
     ##Detection for: [3  6  7 10 12 16 25 32 36 43]
-    to_plot = [12,43]
+    to_plot = [12]
 
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(10, 4))
-    grid = ImageGrid(fig, 111, nrows_ncols=(len(to_plot),6), axes_pad=0.1,
+    fig = pp.figure(figsize=(6.2, 2))
+    grid = ImageGrid(fig, 111, nrows_ncols=(len(to_plot),4), axes_pad=0.1,
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='single')
-    jj=0 
-    ii=0
+    
     for quasar in to_plot:
         save_name = 'output_image_{}.pdf'.format(quasar) if 'save' in argv else None
-        trueImage=0
-        convolved=0
-        HST=1
-        #ii=jj
-        plot_models(quasar, save_name=save_name)
-        ii+=1
-        convolved=1
-        plot_models(quasar, save_name=save_name)
-        ii+=1
-        convolved=0
-        trueImage=1
-        #ii=jj+len(to_plot)
         plot_models(quasar, save_name=save_name) 
-        ii+=1
-        HST=0
-        trueImage=0
-        #ii=jj+2*len(to_plot)
-        plot_models(quasar, save_name=save_name) 
-        ii+=1
-        convolved=1
-        plot_models(quasar, save_name=save_name)
-        ii+=1
-        convolved=0
-        trueImage=1
-        #ii=jj+3*len(to_plot)
-        plot_models(quasar, save_name=save_name) 
-        ii+=1
-        #jj+=1"""
 
     xy_format = pp.FormatStrFormatter(r'$%0.1f^{\prime\prime}$')
     for ax in grid:
@@ -184,7 +137,7 @@ if __name__ == '__main__':
         ax.set_yticks(_xytix)
         ax.xaxis.set_major_formatter(xy_format)
         ax.yaxis.set_major_formatter(xy_format)
-    pp.subplots_adjust(left=0.06, bottom=0.06, right=0.92, top=0.92)
-    pp.savefig('residual_HSTvsJWST.pdf')
+    pp.subplots_adjust(left=0.1, bottom=0.06, right=0.9, top=0.92)
+    pp.savefig('residual_fourPanel.pdf')
     pp.show()
     pp.close(fig)

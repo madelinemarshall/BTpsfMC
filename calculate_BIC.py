@@ -2,7 +2,7 @@ from astropy.io import fits
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
+import pickle 
 #plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 colors         = ['#e41a1c','#377eb8','#4daf4a','#984ea3',\
@@ -98,51 +98,65 @@ if __name__=='__main__':
     folder_noHost = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_'+filt+'_noHost/'
     folder_host = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_'+filt+'/'
     success[filt],detect_rate[filt]=assess_quasar(folder_noHost,folder_host,fname,quasars)
+  
+  for filt in ['F115W','F150W','F277W','F356W','F444W']:
+    print(filt)
+    folder_noHost = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_'+filt+'_5000s_noHost/'
+    folder_host = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_'+filt+'_5000s/'
+    success[filt+' 5 ks'],detect_rate[filt+' 5 ks']=assess_quasar(folder_noHost,folder_host,fname,quasars)
+  
   wavelength2={'F115W':1.15,'F150W':1.5,'F277W':2.77,'F356W':3.56,'F444W':4.44,'F560W':5.60}
   wavelength.update(wavelength2)
-  
-  print('F277W 5000s')
-  folder_noHost = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_F277W_5000s_noHost/'
-  folder_host = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_F277W_5000s/'
-  success['F277W 5 ks'],detect_rate['F277W 5 ks']=assess_quasar(folder_noHost,folder_host,fname,quasars)
-
   
   for key in success.keys():
     df.loc[(df['Sample']==title),key]=success[key]    
   print(df.loc[df['Sample']==title])
-  df.to_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase_processed.pkl')
+  ##SAVE
+  #####df.to_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase_processed.pkl')
   
-  """print('CO quasars')
+  print('CO quasars')
+  df=pd.read_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase_processed.pkl')
   title='CO'
+  #df=df[df['Sample']==title]
+
   quasars=[4,5,11,13,14,15,19,26,28,31,34,35,37,38,42,44,49,51,52,53,54,56,57,61,62,63,64,67,68,71,77,78,82,85,86,87,94,97,98,101,103,105,106,110,111,112,113,114,119,124,125,126,128,129,130,133,138,143,145,147,148,149,151,156,158,159,161,163,165,172,173,177,178,179,181,182,184,186,189,191,195,196,199,200,202,204,205,206,207,214,215,218,219,221,222,223,226,231,233,234,235,241,244,246,248,249,251,252,255,258,259,261,265,266,268,269,270,272,274,275,278,281,290,291,292,297,298,302,304,306,308,311,315,317,319,324,328,335,337,345,346,348,353,363,366,367,369,380,384,388,390,396,409,410,427,429,437,442,459,460,461,464,465,477,483,487,505,519,528,546,553,561,572,606,612]
   folder_noHost = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/CO_z7_noHost/'
   folder_host = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/CO_z7/'
   fname='mcmc_out_mock_JWST_CO_'
-  a,b=assess_quasar(folder_noHost,folder_host,fname,quasars)"""
+  a,b=assess_quasar(folder_noHost,folder_host,fname,quasars)
+  
+  df=df[df.Index!=96]#quasars spectra doesn't work
+  df=df[df.Index!=336]#quasars spectra doesn't work
+  df.loc[df['Sample']==title,'F200W']=a
+  ####df.to_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase_processed.pkl')
 
   #Plot success rates
-  fig = plt.subplots(figsize=(4,4),gridspec_kw={'bottom':0.3,'left':0.15,'right':0.95})
+  fig = plt.subplots(figsize=(4,4),gridspec_kw={'bottom':0.35,'left':0.15,'right':0.95,'top':0.95})
   
-  plt.plot(wavelength['1 ks'],detect_rate['1 ks'],'o',color=colors[6],label='1 ks')
-  plt.plot(2.0,detect_rate['2.5 ks'],'o',color=colors[4],label='2.5 ks')
-  plt.plot(wavelength['5 ks'],detect_rate['5 ks'],'o',color=colors[5],label='5 ks')
+  plt.plot(wavelength['1 ks'],detect_rate['1 ks'],'o',color=colors[6],label='1 ks',markerfacecolor='w',markeredgewidth=1.5)
+  plt.plot(2.0,detect_rate['2.5 ks'],'o',color=colors[4],label='2.5 ks',markerfacecolor='w',markeredgewidth=1.5)
+  plt.plot(wavelength['5 ks'],detect_rate['5 ks'],'o',color=colors[5],label='5 ks',markerfacecolor='None',markeredgewidth=1.5)
 
   for filt in ['F115W','F150W','F277W','F356W','F444W']:
     plt.plot(wavelength[filt],detect_rate[filt],'o',color=colors[0],label='__nolabel__')#filt)
+    plt.plot(wavelength[filt],detect_rate[filt+' 5 ks'],'o',color=colors[5],label='__nolabel__',markerfacecolor='None',markeredgewidth=1.5)#filt)
   plt.plot(wavelength['F200W'],detect_rate['F200W'],'o',color=colors[0],label='10 ks')
   
   plt.plot(wavelength['F150W 4800s'],detect_rate['F150W 4800s'],'o',color=colors[1],label='4.8 ks')
   plt.plot(wavelength['HST'],detect_rate['HST'],'s',color=colors[1],label='4.8 ks (HST WFC3)')
   plt.plot(wavelength['F560W'],detect_rate['F560W'],'^',color=colors[0],label='10 ks (MIRI)')
-  plt.plot(wavelength['F277W'],detect_rate['F277W 5 ks'],'o',color=colors[5],label='__nolabel__')#'5 ks')
 
   
-  plt.legend(fontsize='small',loc=(0.1,-0.5),ncol=2)
+  plt.legend(fontsize='small',loc=(0.1,-0.55),ncol=2)
   plt.xlabel('Wavelength (microns)')
   plt.ylabel('Fraction of Successful Detections')
   #plt.tight_layout()
   plt.savefig('success_rates.pdf')
   plt.show()
-
+  
+  with open('wavelength.pkl', 'wb') as f:
+        pickle.dump(wavelength, f, pickle.HIGHEST_PROTOCOL)
+  with open('detect_rate.pkl', 'wb') as f:
+        pickle.dump(detect_rate, f, pickle.HIGHEST_PROTOCOL)
 
  

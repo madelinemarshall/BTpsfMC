@@ -20,13 +20,13 @@ if __name__=='__main__':
     psf_var = np.where(ivm_psf <= 0, 0, 1 / ivm_psf)
 
     #for dirc in ['realObs_fakePSF/','fakeObs_realPSF/','croppedTrueSolution/','']:
-    for dirc in ['croppedUnconstrained/','croppedTrueSolution/','']:
+    for dirc in ['SDSS_z7/']:
       print(dirc)
-      resid = fits.getdata(dirc+'mcmc_out_mock_HST_residual.fits')
+      resid = fits.getdata(dirc+'mcmc_out_mock_HST_SDSS_3_residual.fits')
       #psf = fits.getdata('../data/sci_PSF_HST.fits')
-      ivm = fits.getdata(dirc+'mcmc_out_mock_HST_composite_ivm.fits')
-      conv_px = fits.getdata(dirc+'mcmc_out_mock_HST_convolved_model.fits')
-      raw_px = fits.getdata(dirc+'mcmc_out_mock_HST_raw_model.fits')
+      ivm = fits.getdata(dirc+'mcmc_out_mock_HST_SDSS_3_composite_ivm.fits')
+      conv_px = fits.getdata(dirc+'mcmc_out_mock_HST_SDSS_3_convolved_model.fits')
+      raw_px = fits.getdata(dirc+'mcmc_out_mock_HST_SDSS_3_raw_model.fits')
 
       
       ll=-0.5*np.sum(resid**2*ivm-np.log10(0.5/np.pi*ivm))

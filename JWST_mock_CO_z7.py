@@ -245,7 +245,7 @@ if __name__=='__main__':
 
     #####HOST?
     host=True
-    onlyHost=False
+    onlyHost=True
     if host and onlyHost:
       print('__________ONLY HOST___________')
     elif host:
@@ -314,7 +314,7 @@ if __name__=='__main__':
     
     
        
-    for ii in range(120,num_samps):
+    for ii in range(0,num_samps):
       fig, axes = plt.subplots(1,1, figsize = (5,5))
       err_fig, err_axes = plt.subplots(1,1, figsize = (5,5))
     
