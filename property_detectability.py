@@ -167,6 +167,7 @@ if __name__=='__main__':
       ax[3,1].set_xlabel(r'$\log(M_\ast/M_\odot)$')
       ax[2,0].set_xlabel('Success\nRate')
       ax[2,1].legend()
+      ax[3,0].axis('off')
     plt.savefig('properties_stellarMass.pdf') 
    
 

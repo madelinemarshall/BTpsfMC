@@ -11,7 +11,7 @@ import pandas as pd
 from synphot import etau_madau
 import matplotlib
 import pickle
-matplotlib.rcParams['font.size'] = (9)
+#matplotlib.rcParams['font.size'] = (9)
 matplotlib.rcParams['figure.figsize'] = (7.2,3.2)
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
@@ -111,7 +111,7 @@ with open('detect_rate.pkl', 'rb') as f:
 
 #Plot success rates
 #fig,ax = plt.subplots(2,1,figsize=(4,4),gridspec_kw={'bottom':0.15,'left':0.15,'right':0.95,'top':0.95,'height_ratios':[2,1]},sharex=True)
-fig,ax = plt.subplots(figsize=(3.6,3.2),gridspec_kw={'bottom':0.15,'left':0.15,'right':0.95,'top':0.85})
+fig,ax = plt.subplots(figsize=(3.2,3.6),gridspec_kw={'bottom':0.3,'left':0.15,'right':0.95,'top':0.85})
   
 ax.plot(wavelength['1 ks'],detect_rate['1 ks'],'o',color=colors[6],label='1 ks')#,markerfacecolor='w',markeredgewidth=2.1)
 ax.plot(2.0,detect_rate['2.5 ks'],'o',color=colors[4],label='2.5 ks')#,markerfacecolor='w',markeredgewidth=2.1)
@@ -124,13 +124,13 @@ for filt in ['F356W']:
     ax.plot(wavelength[filt],detect_rate[filt],'o',color=colors[0],label='__nolabel__')#filt)
     ax.plot(wavelength[filt],detect_rate[filt+' 5 ks'],'o',color=colors[5],label='__nolabel__',markerfacecolor='None',markeredgewidth=2.1)#filt)
 ax.plot(wavelength['F200W'],detect_rate['F200W'],'o',color=colors[0],label='10 ks')
+ax.plot(wavelength['F560W'],detect_rate['F560W'],'^',color=colors[0],label='10 ks (MIRI)')
   
 ax.plot(wavelength['F150W 4800s'],detect_rate['F150W 4800s'],'o',color=colors[1],label='4.8 ks')
 ax.plot(wavelength['HST'],detect_rate['HST'],'s',color=colors[1],label='4.8 ks (HST)')
-ax.plot(wavelength['F560W'],detect_rate['F560W'],'^',color=colors[0],label='10 ks (MIRI)')
 
   
-plt.legend(fontsize='small',loc=(0.26,0.02),ncol=2)
+plt.legend(fontsize='small',loc=(-0.16,-0.54),ncol=3,columnspacing=1)
 ax.set_xlabel(r'Observed Wavelength ($\mu$m)')
 ax.set_ylabel('Fraction of Successful Detections')
 ax.set_xlim([0.9,5.9])

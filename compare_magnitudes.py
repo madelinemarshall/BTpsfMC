@@ -95,8 +95,9 @@ for filt in ['F115W','F150W','F200W','F277W','F356W','F444W']:
       #ax2[0,1].errorbar(OH_rad[locc]*pxscale,fit_rad[locc]*pxscale,yerr=err_rad[locc]*pxscale,xerr=OH_rad_err[locc]*pxscale,fmt='o',color='C3')
       ax2[1,1].errorbar(OH_sers[df[filt]==True],fit_sers[df[filt]==True],yerr=err_sers[df[filt]==True],xerr=OH_sers_err[df[filt]==True],fmt='o',color='C2')
       ax4.errorbar(OH_mag[df[filt]==True],fit_mag[df[filt]==True],yerr=err_mag[df[filt]==True],xerr=OH_mag_err[df[filt]==True],fmt='o',color='C2')
-      print(np.mean(fit_mag[df[filt]==True]-OH_mag[df[filt]==True])) 
-      print(np.max(fit_mag[df[filt]==True]-OH_mag[df[filt]==True]))
+      print('mean',np.mean(fit_mag[df[filt]==True]-OH_mag[df[filt]==True])) 
+      print('max (+ve)',np.max(fit_mag[df[filt]==True]-OH_mag[df[filt]==True]))
+      print('max (-ve)',np.min(fit_mag[df[filt]==True]-OH_mag[df[filt]==True]))
 
 ax1.plot([22.5,27],[22.5,27],'k')
 ax1.invert_xaxis()
