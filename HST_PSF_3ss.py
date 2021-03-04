@@ -43,11 +43,12 @@ def create_circular_mask(h, w, center=None, radius=None):
     return mask
 
 
-def plot_PSF(LPSF,axes,ivm_axes,f,err):
+def plot_PSF(LPSF,axes,ivm_axes,f):
   print(LPSF)
   imgs = {}
 
-  super_samp=2
+  super_samp=3
+  print(pixel_scale,pixel_scale/super_samp)
   img = images.observed(f, cosmo, z, target_width_arcsec=width,smoothing = False,  verbose=True, PSF =PSFs[f],super_sampling=super_samp).particle(np.array([0.]), np.array([0.]), np.array([LPSF]),centre=[0,0,0])
 
   # create background image object (cutoutwidth in pixels)
@@ -67,9 +68,6 @@ def plot_PSF(LPSF,axes,ivm_axes,f,err):
   noisy_full_img = np.random.poisson(full_img)
   img_data = noisy_full_img / exp_time
 
-  if err>0:
-    uncertainty=1+err*np.random.standard_normal(np.shape(img_data))
-    img_data=img_data*uncertainty
 
   data_sigma=np.sqrt(np.abs(img_data)) #sigma = sqrt abs(signal)
   mx=np.amax(img_data)
@@ -85,24 +83,13 @@ def plot_PSF(LPSF,axes,ivm_axes,f,err):
   img2 = err_axes.imshow(mask*ivm,cmap='magma', norm=LogNorm(vmin = mx_var/1e5, vmax=mx_var/10))#, vmin = mx -3, vmax=mx)
  
   
-  hdu=fits.PrimaryHDU(mask*(img_data))#+img_bkg_data))
-  hdu_ivm=fits.PrimaryHDU(mask*ivm)
+  hdu=fits.PrimaryHDU(mask[:104,:104]*(img_data[:104,:104]))#+img_bkg_data))
+  hdu_ivm=fits.PrimaryHDU(mask[:104,:104]*ivm[:104,:104])
   #hdu_ivm=fits.PrimaryHDU(np.ones_like(data_sigma))
   #hdu_ivm=fits.PrimaryHDU(mask*1/((data_sigma)**2))
   
-  if flux_fact!=20:
-    hdu.writeto('data/sci_PSF_JWST_{}_{}'.format(filt_str,int(flux_fact))+'.fits',overwrite=True) 
-    hdu_ivm.writeto('data/ivm_PSF_JWST_{}_{}'.format(filt_str,int(flux_fact))+'.fits',overwrite=True) 
-  elif err>0.:
-    hdu.writeto('data/sci_PSF_JWST_{}_{}'.format(filt_str,err).replace('.','p')+'.fits',overwrite=True)
-    hdu_ivm.writeto('data/ivm_PSF_JWST_{}_{}'.format(filt_str,err).replace('.','p')+'.fits',overwrite=True)
-  else:
-      if exp_time==10000:
-        hdu.writeto('data/sci_PSF_JWST_{}_SN.fits'.format(filt_str),overwrite=True)
-        hdu_ivm.writeto('data/ivm_PSF_JWST_{}_SN.fits'.format(filt_str),overwrite=True)
-      else:
-        hdu.writeto('data/sci_PSF_JWST_{}_SN_{}s.fits'.format(filt_str,exp_time),overwrite=True)
-        hdu_ivm.writeto('data/ivm_PSF_JWST_{}_SN_{}s.fits'.format(filt_str,exp_time),overwrite=True)
+  hdu.writeto('data/sci_PSF_HST_{}_SN_3ss.fits'.format(filt_str),overwrite=True)
+  hdu_ivm.writeto('data/ivm_PSF_HST_{}_SN_3ss.fits'.format(filt_str),overwrite=True)
 
   axes.set_facecolor('black')
 
@@ -149,14 +136,15 @@ if __name__=='__main__':
     model = models.define_model('BPASSv2.2.1.binary/ModSalpeter_300') # DEFINE SED GRID -
     model.dust = {'A': 4.6, 'slope': -1.0}
 
-    #filters = [FLARE.filters.NIRCam_W[2]]
-    filters = [FLARE.filters.MIRI[1]]
+    #filters = [FLARE.filters.NIRCam_W[4]]
+    #F = FLARE.filters.add_filters(filters, new_lam = model.lam* (1.+z))
+    #PSFs = PSF.Webb(filters, resampling_factor = 5) # creates a dictionary of instances of the webbPSF class
+    filters = [FLARE.filters.WFC3NIR_W[3]]    
     filt_str=(filters[0].split('.')[-1])
-    print('filter: ',filt_str)
     F = FLARE.filters.add_filters(filters, new_lam = model.lam* (1.+z))
-    PSFs = PSF.Webb(filters, resampling_factor = 5) # creates a dictionary of instances of the webbPSF class
+    PSFs = PSF.Hubble(filters)
 
-    width=3  #8.33 #size of cutout in ''  #MUST RESULT IN EVEN NUMBER OF PIXELS
+    width=4.6  #8.33 #size of cutout in ''  #MUST RESULT IN EVEN NUMBER OF PIXELS
     FOV=width/cosmo.arcsec_per_kpc_proper(z).value #size of cutout in kpc
     smoothing = None#('adaptive',60)
    
@@ -171,46 +159,15 @@ if __name__=='__main__':
     Ndim = int(FOV/resolution) #20#width of image / resolution
     #background setup
     aperture_radius = 2.5*pixel_scale         # aperture radius in arcsec
-    zeropoint = 25.946              
+    zeropoint = 25.946              # AB mag zeropoint, doesn't have any effect
     nJy_to_es = 1E-9 * 10**(0.4*(zeropoint-8.9))
-    exp_time = 10000
-    if exp_time==10000:
-      aperture_flux_limits={'JWST.NIRCAM.F090W':15.3, 'JWST.NIRCAM.F115W':13.2,
-       'JWST.NIRCAM.F150W':10.6, 'JWST.NIRCAM.F200W':9.1, 'JWST.NIRCAM.F277W':14.3, 
-       'JWST.NIRCAM.F356W':12.1, 'JWST.NIRCAM.F444W':23.6, 'JWST.MIRI.F560W':130,'JWST.MIRI.F770W':240} #sensitivity at 10ks in nJy, 10 sigma
-      aperture_f_limit = aperture_flux_limits[filters[0]]
-    else:
-      if filters[0]=='JWST.NIRCAM.F200W':
-        aperture_flux_limits={1000:44.9,2500:19.9,5000:13.1,10000:9.1} #10 sigma limits for F200W, 1ks, 5ks, 10ks
-      elif filters[0]=='JWST.NIRCAM.F150W': 
-        aperture_flux_limits={1000:52.2,4800:15.55,5000:15.2,10000:10.6} #10 sigma limits for F150W, 1ks, 5ks, 10ks
-      elif filters[0]=='JWST.NIRCAM.F115W': 
-        aperture_flux_limits={5000:18.1} #10 sigma limits for F150W, 1ks, 5ks, 10ks
-      elif filters[0]=='JWST.NIRCAM.F277W': 
-        aperture_flux_limits={5000:19.1} #10 sigma limits for F150W, 1ks, 5ks, 10ks
-      elif filters[0]=='JWST.NIRCAM.F356W': 
-        aperture_flux_limits={5000:18.3} #10 sigma limits for F150W, 1ks, 5ks, 10ks
-      elif filters[0]=='JWST.NIRCAM.F444W': 
-        aperture_flux_limits={5000:24.7} #10 sigma limits for F150W, 1ks, 5ks, 10ks
-      else:
-        print("ERR, can't have not specified filter with non-10ks exposure time")
-      aperture_f_limit = aperture_flux_limits[exp_time]
-    print('Aperture flux limit ',aperture_f_limit,'Exp time ',exp_time)
+    #aperture_f_limit = 9.1        # aperture flux limit (nJy) (F115W in 10ks, 10 sigma)
+    aperture_f_limit = 48 #guess based on HST ivm maps        # aperture flux limit (nJy) (F115W in 10ks, 10 sigma)
     ap_sig = 10
     #https://jwst-docs.stsci.edu/near-infrared-camera/nircam-predicted-performance/nircam-sensitivity
     r = aperture_radius/pixel_scale # aperture radius in pixels
 
-    if len(sys.argv)>1:
-      flux_fact = np.float(sys.argv[1])
-    else:
-      flux_fact = 20
-    print('flux_fact: ',flux_fact)
-
-    if len(sys.argv)>2:
-      err = np.float(sys.argv[2])
-    else:
-      err=0
-    print('error: ',err)
+    exp_time = 4800
 
     model.create_Fnu_grid(F, z, cosmo)
 
@@ -220,8 +177,8 @@ if __name__=='__main__':
     err_fig, err_axes = plt.subplots(1,1, figsize = (5,5))
 
     #FPSF=13578*12 #12x BT model SDSS quasar brightness, from difference between PSF and quasar for SDSS-J0203
-    FPSF=6e5#16941.5654116655 * flux_fact
-    plot_PSF(FPSF,axes,err_axes,filters[0],err)
+    FPSF=6e5
+    plot_PSF(FPSF,axes,err_axes,filters[0])
  
     #plt.savefig('/home/mmarshal/results/plots/BTpsfMC/mock_HST.pdf')
     plt.show()

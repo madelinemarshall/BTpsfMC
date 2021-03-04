@@ -63,6 +63,13 @@ if __name__=='__main__':
   fname='mcmc_out_mock_HST_SDSS_'
   success['HST'],detect_rate['HST']=assess_quasar(folder_noHost,folder_host,fname,quasars)
   
+  print('HST, 3ss')
+  folder_noHost = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runHST/SDSS_z7_3ss_noHost/'
+  folder_host = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runHST/SDSS_z7_3ss/'
+  fname='mcmc_out_mock_HST_SDSS_'
+  success['HST 3ss'],detect_rate['HST 3ss']=assess_quasar(folder_noHost,folder_host,fname,quasars)
+  
+  
   #JWST
   print('JWST F150W 4800s')
   folder_noHost = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_F150W_4800s_noHost/'
@@ -93,7 +100,7 @@ if __name__=='__main__':
   success['F200W'],detect_rate['F200W']=assess_quasar(folder_noHost,folder_host,fname,quasars)
   wavelength={'HST':1.6,'F150W 4800s':1.5,'1 ks':2.0,'5 ks':2.0,'F200W':2.0}
 
-  for filt in ['F115W','F150W','F277W','F356W','F444W','F560W']:
+  for filt in ['F115W','F150W','F277W','F356W','F444W','F560W','F770W']:
     print(filt)
     folder_noHost = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_'+filt+'_noHost/'
     folder_host = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_'+filt+'/'
@@ -105,7 +112,7 @@ if __name__=='__main__':
     folder_host = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_'+filt+'_5000s/'
     success[filt+' 5 ks'],detect_rate[filt+' 5 ks']=assess_quasar(folder_noHost,folder_host,fname,quasars)
   
-  wavelength2={'F115W':1.15,'F150W':1.5,'F277W':2.77,'F356W':3.56,'F444W':4.44,'F560W':5.60}
+  wavelength2={'F115W':1.15,'F150W':1.5,'F277W':2.77,'F356W':3.56,'F444W':4.44,'F560W':5.60,'F770W':7.7}
   wavelength.update(wavelength2)
   
   for key in success.keys():
@@ -145,13 +152,13 @@ if __name__=='__main__':
   plt.plot(wavelength['F150W 4800s'],detect_rate['F150W 4800s'],'o',color=colors[1],label='4.8 ks')
   plt.plot(wavelength['HST'],detect_rate['HST'],'s',color=colors[1],label='4.8 ks (HST WFC3)')
   plt.plot(wavelength['F560W'],detect_rate['F560W'],'^',color=colors[0],label='10 ks (MIRI)')
-
+  plt.plot(wavelength['F770W'],detect_rate['F770W'],'^',color=colors[0],label='10 ks (MIRI)')
   
   plt.legend(fontsize='small',loc=(0.1,-0.55),ncol=2)
   plt.xlabel('Wavelength (microns)')
   plt.ylabel('Fraction of Successful Detections')
   #plt.tight_layout()
-  plt.savefig('success_rates.pdf')
+  #plt.savefig('success_rates.pdf')
   plt.show()
   
   with open('wavelength.pkl', 'wb') as f:

@@ -26,11 +26,19 @@ def hist_x(data,mask,ax,color='#d6f1ff'):
         if len(data[(data<=b_max) & (data>b_min)])>0:
           frac[bb]=len(data[mask][(data[mask]<=b_max) & (data[mask]>b_min)])/len(data[(data<=b_max) & (data>b_min)])
           #err[bb]=np.sqrt(len(data[mask][(data[mask]<=b_max) & (data[mask]>b_min)]))/len(data[(data<=b_max) & (data>b_min)])
-          err[bb]=1/np.sqrt(len(data[(data<=b_max) & (data>b_min)]))
-          if frac[bb]+err[bb]>1:
-             err_up[bb]=1-frac[bb]
-          else:
-             err_up[bb]=err[bb]
+          ninbin=len(data[(data<=b_max) & (data>b_min)])
+          zscore=1.96
+          w_min = (2*ninbin*frac[bb]+zscore**2-(zscore*np.sqrt(zscore**2-1/ninbin+4*ninbin*frac[bb]*(1-frac[bb])+(4*frac[bb]-2))+1))/(2*(ninbin+zscore**2))
+          w_min = np.max([0,w_min])
+          w_max = (2*ninbin*frac[bb]+zscore**2+(zscore*np.sqrt(zscore**2-1/ninbin+4*ninbin*frac[bb]*(1-frac[bb])-(4*frac[bb]-2))+1))/(2*(ninbin+zscore**2))
+          w_max = np.min([1,w_max])
+
+          err[bb]=frac[bb]-w_min
+          err_up[bb]=w_max-frac[bb]
+          if frac[bb]==1:
+             err_up[bb]=0
+          elif frac[bb]==0:
+             err[bb]=0
         else:
           frac[bb]=np.nan
           err[bb]=0
@@ -56,11 +64,19 @@ def hist_y(data,mask,ax,color='#d6f1ff'):
         if len(data[(data<=b_max) & (data>b_min)])>0:
           frac[bb]=len(data[mask][(data[mask]<=b_max) & (data[mask]>b_min)])/len(data[(data<=b_max) & (data>b_min)])
           #err[bb]=np.sqrt(len(data[(data<=b_max) & (data>b_min)]))/len(data[(data<=b_max) & (data>b_min)])
-          err[bb]=1/np.sqrt(len(data[(data<=b_max) & (data>b_min)]))
-          if frac[bb]+err[bb]>1:
-             err_up[bb]=1-frac[bb]
-          else:
-             err_up[bb]=err[bb]
+          ninbin=len(data[(data<=b_max) & (data>b_min)])
+          zscore=1.96
+          w_min = (2*ninbin*frac[bb]+zscore**2-(zscore*np.sqrt(zscore**2-1/ninbin+4*ninbin*frac[bb]*(1-frac[bb])+(4*frac[bb]-2))+1))/(2*(ninbin+zscore**2))
+          w_min = np.max([0,w_min])
+          w_max = (2*ninbin*frac[bb]+zscore**2+(zscore*np.sqrt(zscore**2-1/ninbin+4*ninbin*frac[bb]*(1-frac[bb])-(4*frac[bb]-2))+1))/(2*(ninbin+zscore**2))
+          w_max = np.min([1,w_max])
+
+          err[bb]=frac[bb]-w_min
+          err_up[bb]=w_max-frac[bb]
+          if frac[bb]==1:
+             err_up[bb]=0
+          elif frac[bb]==0:
+             err[bb]=0
         else:
           frac[bb]=np.nan
           err[bb]=0
@@ -89,9 +105,12 @@ def two_pane_plot(xdata1,ydata1,mask1,xdata2,ydata2,mask2,ax,hist_ax,bottom=Fals
     bins_min=np.amin(xdata)
     bins_max=np.amax(xdata)
     ax.set_xlim(bins_min-0.05,bins_max+0.05)
+    if bottom:
+      bottom.set_xlim(bins_min-0.05,bins_max+0.05)
     bins_min=np.amin(ydata)
     bins_max=np.amax(ydata)
     ax.set_ylim(bins_min-0.05,bins_max+0.05)
+    hist_ax.set_ylim(bins_min-0.05,bins_max+0.05)
     ax.set_yticks([])
     ax.set_xticks([])
     return
@@ -188,8 +207,8 @@ if __name__=='__main__':
     xdata2=df1['MUV_AGN_dust']-1.086*df1['tau_UV_AGN']
     ydata2=df1['MUV_gal']
     three_pane_plot(xdata1,ydata1,detectable_CO,xdata2,ydata2,detectable_SDSS,ax)
-    ax[1,1].set_xlabel(r'$M_{\rm{UV,~ AGN}}$')
-    ax[0,0].set_ylabel(r'$M_{\rm{UV,~ host}}$')
+    ax[1,1].set_xlabel(r'$M_{\rm{UV,AGN~ (Intrinsic)}}$')
+    ax[0,0].set_ylabel(r'$M_{\rm{UV,Host~ (Intrinsic)}}$')
     ax[0,0].set_xlabel('Success\nRate')
    
  
@@ -202,10 +221,14 @@ if __name__=='__main__':
     ydata2=df1['MUV_gal_dust']
     three_pane_plot(xdata1,ydata1,detectable_CO,xdata2,ydata2,detectable_SDSS,ax)
     
-    ax[1,1].set_xlabel(r'$M_{\rm{UV,~ AGN~ (dust)}}$')
-    ax[0,0].set_ylabel(r'$M_{\rm{UV,~ host~ (dust)}}$')
+    ax[1,1].set_xlabel(r'$M_{\rm{UV,AGN}}$')
+    ax[0,0].set_ylabel(r'$M_{\rm{UV,Host}}$')
     ax[0,0].set_xlabel('Success\nRate')
     ax[0,1].legend(fontsize='small',ncol=2,loc=(-0.27,-0.65))
+    ax[0,0].invert_yaxis()
+    ax[1,1].invert_xaxis()
+    ax[0,1].invert_yaxis()
+    ax[0,1].invert_xaxis()
     #plt.savefig('properties_magnitudes_intrinsic.pdf') 
     plt.savefig('properties_magnitudes_dust_CO.pdf') 
    

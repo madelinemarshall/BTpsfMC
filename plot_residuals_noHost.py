@@ -23,10 +23,10 @@ _stretch = AsinhStretch()
 #_pnorm = ImageNormalize(vmin=-0.0001, vmax=0.01, stretch=_stretch, clip=True)
 _stretch.a = (0.1 - 0.00001)/2 / (0.1+0.00001)
 _pnorm = ImageNormalize(vmin=-0.00001, vmax=0.1, stretch=_stretch, clip=True)
-_axis_range = [-1.1,1.1,-1.1,1.1]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
+_axis_range = [-0.7,0.7,-0.7,0.7]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
 #_xytix = [-3,-2, -1, 0, 1, 2,3]  # in arcsec
-_xytix = [-1, 0, 1]  # in arcsec
-_coltix = np.array([25,26,27,28])  # in mag/arcsec**2
+_xytix = [-0.5, 0, 0.5]  # in arcsec
+_coltix = np.array([24,25,26,27])  # in mag/arcsec**2
 
 gray_r = pp.cm.cmap_d['Spectral_r']
 
@@ -52,7 +52,7 @@ def plot_models(quasar, filt, save_name=None):
     true_smooth = gaussian_filter(stamp, (2, 2))
 
     center = np.array(psfresid.shape)[::-1]/2
-    pxscale = 0.063/2 #arcsec
+    pxscale = 0.031/2 #arcsec
     extents = np.array([-center[0], center[0],
                -center[1], center[1]])*pxscale
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
         plot_models(quasar, filt, save_name=save_name)
         ii+=1
    
-    xy_format = pp.FormatStrFormatter(r'$%0.0f^{\prime\prime}$')
+    xy_format = pp.FormatStrFormatter(r'$%0.1f^{\prime\prime}$')
     for ax in grid:
         ax.set_xticks(_xytix)
         ax.set_yticks(_xytix)

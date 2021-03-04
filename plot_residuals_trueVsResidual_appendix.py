@@ -1,5 +1,6 @@
 from __future__ import division
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as pp
 import pyregion
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -11,9 +12,14 @@ from scipy.ndimage import gaussian_filter
 from astropy.visualization import AsinhStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from matplotlib import rc
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.gridspec as gridspec
+
 rc('font', family='serif')
+matplotlib.rcParams['font.size'] = (9)
 
 _psfresid_pat = 'data/sci_mock_JWST_{}_{}_onlyHost.fits'
+_true_pat = 'runJWST/SDSS_z7_SN/mcmc_out_mock_JWST_{}_point_source_subtracted.fits'
 _mag_zp = 25.9463
 
 _stretch = AsinhStretch()
@@ -36,6 +42,10 @@ def plot_models(quasar,filt):
     #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
     resid_smooth = gaussian_filter(psfresid, (1, 1))
 
+    true = fits.getdata(_true_pat.format(quasar))
+    #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
+    true_smooth = gaussian_filter(true, (1, 1))
+
     center = np.array(psfresid.shape)[::-1]/2
     pxscale = 0.031/2
     extents = np.array([-center[0], center[0],
@@ -45,6 +55,9 @@ def plot_models(quasar,filt):
     plot_panels = [resid_smooth, 'Point Source\nSubtracted']
 
     im = grid[ii].imshow(plot_panels[0], extent=extents, origin='lower',
+                               cmap=gray_r, norm=_pnorm,
+                               interpolation='nearest')
+    im = grid[ii+1].imshow(true_smooth, extent=extents, origin='lower',
                                cmap=gray_r, norm=_pnorm,
                                interpolation='nearest')
     if int(quasar.split('_')[-1]) in undetectable:
@@ -61,6 +74,7 @@ def plot_models(quasar,filt):
     cbar.set_ticklabels(_coltix)
     grid.cbar_axes[0].set_ylabel('mag arcsec$^{-2}$')
     grid.cbar_axes[0].set_xlabel('mag arcsec$^{-2}$')
+    grid.cbar_axes[0].yaxis.set_label_coords(2,0.5)
 
     #grid[ii].set_title(quasar)
 
@@ -76,32 +90,76 @@ if __name__ == '__main__':
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(10, 6))
-    grid = ImageGrid(fig, 111, nrows_ncols=(4, int(np.ceil(len(to_plot)/4))), axes_pad=0.1,
+    fig = pp.figure(figsize=(6.8, 30))
+    #grid = ImageGrid(fig, 111, nrows_ncols=(4, int(np.ceil(len(to_plot)/4))), axes_pad=0.1,
+    #                 share_all=True, label_mode='L',
+    #
+    #             cbar_location='right', cbar_mode='single')
+    grid1 = ImageGrid(fig, (0.05, 0.05, 0.3, 0.9), nrows_ncols=(int(np.ceil(len(to_plot)/3)), 2), axes_pad=[0.1,0.1],
+                     share_all=True, label_mode='L',cbar_mode='None')
+
+    grid2 = ImageGrid(fig, (0.3339, 0.164, 0.3, 0.786), nrows_ncols=(int(np.ceil(len(to_plot)/3))-1, 2), axes_pad=[0.1,0.1],
+                     share_all=True,label_mode='L',cbar_mode='None')
+
+    grid3 = ImageGrid(fig, (0.63, 0.164, 0.3, 0.786), nrows_ncols=(int(np.ceil(len(to_plot)/3))-1, 2), axes_pad=[0.1,0.1],
                      share_all=True, label_mode='L',
-                     cbar_location='right', cbar_mode='single')
-   
+                     cbar_location='right', cbar_mode='single',cbar_pad=0.1,cbar_size=0.1)
+ 
     if len(argv)>1:
       filt=str(argv[1])
     else:
       filt='F200W'
 
-    ii=0 
-    for quasar in to_plot:
+    ii=0
+    col1=-2
+    col2=-2
+    col3=-2
+    for jj,quasar in enumerate(to_plot):
+        if np.mod(jj,3)==0:
+          col1+=2
+          ii=col1
+          grid=grid1
+        elif np.mod(jj,3)==1:
+          col2+=2
+          ii=col2
+          grid=grid2
+        elif np.mod(jj,3)==2:
+          col3+=2
+          ii=col3
+          grid=grid3
         quasar = 'SDSS_' + str(quasar)
         plot_models(quasar,filt)
-        ii+=1
    
     xy_format = pp.FormatStrFormatter(r'$%0.1f^{\prime\prime}$')
-    for ax in grid:
+    for ax in grid1:
         ax.set_xticks(_xytix)
         ax.set_yticks(_xytix)
         ax.xaxis.set_major_formatter(xy_format)
         ax.yaxis.set_major_formatter(xy_format)
+    for ax in grid2:
+        ax.set_xticks(_xytix)
+        ax.set_yticks(_xytix)
+        ax.set_yticklabels(['','',''])
+        ax.set_xticklabels(_xytix)
+        ax.xaxis.set_major_formatter(xy_format)
+        #ax.yaxis.set_major_formatter(xy_format)
+    for ii,ax in enumerate(grid3):
+        ax.set_yticks(_xytix)
+        ax.set_yticklabels(['','',''])
+        ax.set_xticks(_xytix)
+        ax.set_xticklabels(_xytix)
+        ax.xaxis.set_major_formatter(xy_format)
+        #ax.yaxis.set_major_formatter(xy_format)
     pp.subplots_adjust(left=0.08, bottom=0.1, right=0.91, top=0.92)
-    grid[-1].axis('off')
-    grid[-2].axis('off')
-    pp.savefig('SDSS_z7_trueHosts.pdf')
+
+    grid1[0].set_title('PSF-Subtracted',fontsize=9)
+    grid2[0].set_title('PSF-Subtracted',fontsize=9)
+    grid3[0].set_title('PSF-Subtracted',fontsize=9)
+    grid1[1].set_title('True Host',fontsize=9)
+    grid2[1].set_title('True Host',fontsize=9)
+    grid3[1].set_title('True Host',fontsize=9)
+
+    pp.savefig('SDSS_z7_trueVsResiduals_appendix.pdf')
     pp.show() 
     pp.close(fig)
     

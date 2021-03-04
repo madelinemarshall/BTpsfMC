@@ -8,6 +8,7 @@ import sys
 import pandas as pd
 import calculate_BIC
 import matplotlib
+from scipy import stats
 matplotlib.rcParams['font.size'] = (9)
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
@@ -25,11 +26,20 @@ def hist_x(data,mask,ax,**kwargs):
         b_max=bins_min+(bb+1)*bins_width
         if len(data[(data<=b_max) & (data>b_min)])>0:
           frac[bb]=len(data[mask][(data[mask]<=b_max) & (data[mask]>b_min)])/len(data[(data<=b_max) & (data>b_min)])
-          err[bb]=1/np.sqrt(len(data[(data<=b_max) & (data>b_min)]))
-          if frac[bb]+err[bb]>1:
-             err_up[bb]=1-frac[bb]
-          else:
-             err_up[bb]=err[bb]
+          #err[bb]=1/np.sqrt(len(data[(data<=b_max) & (data>b_min)]))
+          ninbin=len(data[(data<=b_max) & (data>b_min)])
+          zscore=1.96
+          w_min = (2*ninbin*frac[bb]+zscore**2-(zscore*np.sqrt(zscore**2-1/ninbin+4*ninbin*frac[bb]*(1-frac[bb])+(4*frac[bb]-2))+1))/(2*(ninbin+zscore**2))
+          w_min = np.max([0,w_min])
+          w_max = (2*ninbin*frac[bb]+zscore**2+(zscore*np.sqrt(zscore**2-1/ninbin+4*ninbin*frac[bb]*(1-frac[bb])-(4*frac[bb]-2))+1))/(2*(ninbin+zscore**2))
+          w_max = np.min([1,w_max])
+
+          err[bb]=frac[bb]-w_min
+          err_up[bb]=w_max-frac[bb]
+          if frac[bb]==1:
+             err_up[bb]=0
+          elif frac[bb]==0:
+             err[bb]=0
         else:
           frac[bb]=np.nan
           err[bb]=0
@@ -55,23 +65,48 @@ def hist_y(data,mask,ax,**kwargs):
         if len(data[(data<=b_max) & (data>b_min)])>0:
           frac[bb]=len(data[mask][(data[mask]<=b_max) & (data[mask]>b_min)])/len(data[(data<=b_max) & (data>b_min)])
           #err[bb]=np.sqrt(len(data[(data<=b_max) & (data>b_min)]))/len(data[(data<=b_max) & (data>b_min)])
-          err[bb]=1/np.sqrt(len(data[(data<=b_max) & (data>b_min)]))
-          if frac[bb]+err[bb]>1:
-             err_up[bb]=1-frac[bb]
-          else:
-             err_up[bb]=err[bb]
+          #err[bb]=1/np.sqrt(len(data[(data<=b_max) & (data>b_min)]))
+          ninbin=len(data[(data<=b_max) & (data>b_min)])
+          #t_value=stats.t.ppf(1-0.1589,ninbin)
+          #err[bb]=t_value*np.sqrt((frac[bb]*(1-frac[bb]))/ninbin)
+          ###WILSON SCORE INTERVAL
+          zscore=1.96
+          w_min = (2*ninbin*frac[bb]+zscore**2-(zscore*np.sqrt(zscore**2-1/ninbin+4*ninbin*frac[bb]*(1-frac[bb])+(4*frac[bb]-2))+1))/(2*(ninbin+zscore**2))
+          w_min = np.max([0,w_min])
+          w_max = (2*ninbin*frac[bb]+zscore**2+(zscore*np.sqrt(zscore**2-1/ninbin+4*ninbin*frac[bb]*(1-frac[bb])-(4*frac[bb]-2))+1))/(2*(ninbin+zscore**2))
+          w_max = np.min([1,w_max])
+
+          err[bb]=frac[bb]-w_min
+          err_up[bb]=w_max-frac[bb]
+          if frac[bb]==1:
+             err_up[bb]=0
+          elif frac[bb]==0:
+             err[bb]=0
+          #if frac[bb]==1:
+          #   err[bb]=1.14/ninbin
+          #   err_up[bb]=0
+          #elif frac[bb]==0:
+          #   if ninbin>1:
+          #     err_up[bb]=1.14/ninbin
+          #   else: 
+          #     err_up[bb]=1
+          #   err[bb]=0
+          #if frac[bb]+err[bb]>1:
+          #   err_up[bb]=1-frac[bb]
+          #else:
+          #   err_up[bb]=err[bb]
         else:
           frac[bb]=np.nan
           err[bb]=0
     ax.barh(bins_min+bins_width*(0.5+np.arange(0,nbins)),width=frac,height=bins_width,edgecolor='k',facecolor='#d6f1ff',xerr=[err,err_up],capsize=3,ecolor=[0.5,0.5,0.5])#[0.8,0.8,0.8])
     #ax.plot(frac,bins_min+bins_width*(1/2+np.arange(0,6)),'ro',zorder=99)#, linewidth=1.2,marker='o',**kwargs)
-    #ax.set_ylim(bins_min-0.05,bins_max+0.05)
+    ax.set_ylim(bins_min-0.02,bins_max+0.02)
     ax.set_xlim(-0.05,1.14)
     ax.set_xticks([0,1])
     ax.tick_params(axis='both', direction='in')
     return
 
-def three_pane_plot(xdata,ydata,mask,ax):
+def three_pane_plot(xdata,ydata,mask,ax,xlim=0.05,ylim=0.01):
     ax[0,1].plot(xdata[easy],ydata[easy],'ko',label='Detectable')#,color='#984ea3')         #['#e41a1c','#377eb8','#4daf4a','#984ea3')
     ax[0,1].plot(xdata[~easy],ydata[~easy],'ko',markerfacecolor='w',label='Undetectable')#,color='#984ea3')
     hist_x(xdata,easy,ax[1,1])
@@ -79,10 +114,12 @@ def three_pane_plot(xdata,ydata,mask,ax):
     
     bins_min=np.amin(xdata)
     bins_max=np.amax(xdata)
-    ax[0,1].set_xlim(bins_min-0.05,bins_max+0.05)
+    ax[0,1].set_xlim(bins_min-xlim,bins_max+xlim)
+    ax[1,1].set_xlim(bins_min-xlim,bins_max+xlim)
     bins_min=np.amin(ydata)
     bins_max=np.amax(ydata)
-    ax[0,1].set_ylim(bins_min-0.01,bins_max+0.01)
+    ax[0,1].set_ylim(bins_min-ylim,bins_max+ylim)
+    ax[0,0].set_ylim(bins_min-ylim,bins_max+ylim)
     ax[0,1].set_yticks([])
     ax[0,1].set_xticks([])
     ax[1,0].axis('off')
@@ -125,7 +162,7 @@ if __name__=='__main__':
     print(df[easy])
     print(df[~easy])
     
-    fig,ax=plt.subplots(4,2,figsize=(4,9.5),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,1,0.3],'hspace':0,'wspace':0,'bottom':0.05,'left':0.2,'right':0.95,'top':0.98})   
+    fig,ax=plt.subplots(4,2,figsize=(4,9.2),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,1,0.3],'hspace':0,'wspace':0,'bottom':0.05,'left':0.2,'right':0.95,'top':0.98})   
     
     labs={'BHMass':r'$\log(M_{\rm{BH}}/M_\odot)$','SFR':r'$\log(\rm{SFR}/M_\odot \rm{yr}^{-1})$'}
     for ii,prop in enumerate(['BHMass','SFR']): 
@@ -137,11 +174,11 @@ if __name__=='__main__':
     
       bins_min=np.amin(np.log10(df['StellarMass']))
       bins_max=np.amax(np.log10(df['StellarMass']))
-      ax[ii,1].set_xlim(bins_min-0.05,bins_max+0.05)
+      ax[ii,1].set_xlim(bins_min-0.05,bins_max+0.04)
       bins_min=np.amin(np.log10(df[prop]))
       bins_max=np.amax(np.log10(df[prop]))
       #ax[ii,1].set_ylim(bins_min-0.05,bins_max+0.05)
-      ax[ii,1].set_ylim(bins_min-0.01,bins_max+0.01)
+      ax[ii,1].set_ylim(bins_min-0.02,bins_max+0.02)
       ax[ii,1].set_yticks([])
       ax[ii,0].set_ylabel(labs[prop])
       #ax[ii,1].set_xlabel(r'$\log(M_\ast/M_\odot)$')
@@ -152,15 +189,17 @@ if __name__=='__main__':
       ax[2,1].plot(np.log10(df['StellarMass'])[easy],(df[prop])[easy],'ko',label='Detectable')
       ax[2,1].plot(np.log10(df['StellarMass'])[~easy],(df[prop])[~easy],'ko',markerfacecolor='w',label='Undetectable')
       hist_x(np.log10(df['StellarMass']),easy,ax[3,1],color='k')
+      ax[3,1].set_ylim(-0.05,1.14)
       hist_y(df[prop],easy,ax[2,0],color='k')
     
       bins_min=np.amin(np.log10(df['StellarMass']))
       bins_max=np.amax(np.log10(df['StellarMass']))
-      ax[2,1].set_xlim(bins_min-0.05,bins_max+0.05)
+      ax[2,1].set_xlim(bins_min-0.05,bins_max+0.04)
+      ax[3,1].set_xlim(bins_min-0.05,bins_max+0.04)
       bins_min=np.amin((df[prop]))
       bins_max=np.amax((df[prop]))
       #ax[2,1].set_ylim(bins_min-0.05,bins_max+0.05)
-      ax[2,1].set_ylim(bins_min-0.01,bins_max+0.01)
+      ax[2,1].set_ylim(bins_min-0.02,bins_max+0.02)
       ax[2,1].set_yticks([])
       ax[2,1].set_xticks([])
       ax[2,0].set_ylabel(r'$M_{\rm{bulge}}/M_\ast$')
@@ -223,7 +262,7 @@ if __name__=='__main__':
     ydata=OH_rad
     
     fig,ax=plt.subplots(2,2,figsize=(4,3.3),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.1,'left':0.2,'right':0.95,'top':0.95})   
-    three_pane_plot(xdata,ydata,easy,ax)
+    three_pane_plot(xdata,ydata,easy,ax,0.02,0.002)
     ax[1,1].set_xlabel(r'$R_{0.5}/\rm{kpc}$')
     ax[0,0].set_ylabel(r'F200W Sersic Radius (kpc)')
     ax[0,0].set_xlabel('Success\nRate')
@@ -240,10 +279,14 @@ if __name__=='__main__':
     ydata=df['MUV_gal_dust']
     
     fig,ax=plt.subplots(2,2,figsize=(4,3.3),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.1,'left':0.2,'right':0.95,'top':0.95})   
-    three_pane_plot(xdata,ydata,easy,ax)
-    ax[1,1].set_xlabel(r'$M_{\rm{UV,~ AGN~ (dust)}}$')
-    ax[0,0].set_ylabel(r'$M_{\rm{UV,~ host~ (dust)}}$')
+    three_pane_plot(xdata,ydata,easy,ax,0.08,0.08)
+    ax[1,1].set_xlabel(r'$M_{\rm{UV,~ AGN}}$')
+    ax[0,0].set_ylabel(r'$M_{\rm{UV,~ host}}$')
     ax[0,0].set_xlabel('Success\nRate')
+    ax[0,0].invert_yaxis()
+    ax[1,1].invert_xaxis()
+    ax[0,1].invert_yaxis()
+    ax[0,1].invert_xaxis()
     plt.savefig('properties_magnitudes_dust.pdf') 
    
  
@@ -252,11 +295,15 @@ if __name__=='__main__':
     
     fig,ax=plt.subplots(2,2,figsize=(4,3.3),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.1,'left':0.2,'right':0.95,'top':0.95})   
  
-    three_pane_plot(xdata,ydata,easy,ax)
-    ax[1,1].set_xlabel(r'$M_{\rm{UV,~ AGN}}$')
-    ax[0,0].set_ylabel(r'$M_{\rm{UV,~ host}}$')
+    three_pane_plot(xdata,ydata,easy,ax,0.08,0.08)
+    ax[1,1].set_xlabel(r'$M_{\rm{UV,~ AGN~ (intrinsic)}}$')
+    ax[0,0].set_ylabel(r'$M_{\rm{UV,~ host~ (intrinsic)}}$')
+    ax[0,0].invert_yaxis()
+    ax[1,1].invert_xaxis()
+    ax[0,1].invert_yaxis()
+    ax[0,1].invert_xaxis()
     ax[0,0].set_xlabel('Success\nRate')
-    ax[0,1].legend(loc='lower right')
+    #ax[0,1].legend(loc='lower right')
     plt.savefig('properties_magnitudes_intrinsic.pdf') 
    
     plt.show()

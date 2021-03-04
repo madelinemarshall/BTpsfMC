@@ -7,8 +7,8 @@ from matplotlib.transforms import Affine2D
 from astropy.io import fits
 from astropy.wcs import WCS
 from scipy.ndimage import gaussian_filter
-
-from astropy.visualization import AsinhStretch, LogStretch
+from matplotlib.colors import SymLogNorm
+from astropy.visualization import AsinhStretch, LogStretch, SinhStretch, SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from matplotlib import rc
 rc('font', family='serif')
@@ -63,9 +63,71 @@ def mag_to_flux(mag, zp=0.0, scale=(1.0, 1.0)):
     return 10**(-0.4*(mag - zp)) * np.prod(scale)
 
 
+def rebin(a, shape):
+    sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
+    print(2.5*np.log10(np.shape(a)[0]/shape[0]))
+    return a.reshape(sh).mean(-1).mean(1)# -2.5*np.log10(np.shape(a)[0]**2/shape[0]**2)
+
+
+def plot_difference(resid,true,fullresid, ax):
+    if HST:
+      pxscale = 0.13/2 #arcsec
+      area_fact=1#0.0569
+      circ_D=0.2516*1.60/2.4 #arcsec
+    else:
+      pxscale = 0.031/2
+      area_fact=1
+      circ_D=0.2516*1.50/6.57
+      
+      #_pnorm = ImageNormalize(vmin=-0.00005, vmax=0.01, stretch=_stretch, clip=True)
+
+    _coltix = np.array([28,29,30])  # in mag/arcsec**2
+    #psfresid_smooth=(resid - true)#/true   
+    psfresid_smooth = gaussian_filter(resid-true, (1, 1))
+    ttle=r'PSF-Subtracted $-$ True Host'
+    filt = 'F160W'
+    
+    center = np.array(psfresid_smooth.shape)[::-1]/2
+    
+    extents = np.array([-center[0], center[0],
+               -center[1], center[1]])*pxscale
+    
+    #psfresid=(resid-true)
+    #plot_panels = [psfresid, 'Point Source\nSubtracted']
+    plot_panels = [psfresid_smooth, 'Point Source\nSubtracted']
+    flx = plot_panels[0]*area_fact #puts HST on the same vertical scale (bigger pixels -> volume different).
+    #if not HST:
+    #  flx=rebin(flx,(np.shape(flx)[0]//4,np.shape(flx)[0]//4))
+    #_stretch2 = LogStretch()
+    _stretch2 = SinhStretch()
+    #_stretch2.a = (0.82 - 6)/2 / (0.82+6)
+    #_pnorm = ImageNormalize(vmin=0.82, vmax=6, stretch=_stretch2, clip=True)
+    #_stretch2.a = 1#(0.005 - -0.006)/2 / (0.005+ -0.006)
+    _pnorm = ImageNormalize(vmin=-0.002, vmax=0.005, stretch=_stretch2, clip=True)
+    im = ax.imshow(flx, extent=extents,
+                               origin='lower',
+                               cmap='coolwarm', norm=ImageNormalize(vmin=-0.005,vmax=0.005),#SymLogNorm(0.001,vmin=-0.010,vmax=0.010),#norm=ImageNormalize(vmin=-0.9, vmax=5, stretch=_stretch2),#norm=_pnorm,
+                               interpolation='nearest')
+    grid2[ii].axis(_axis_range)
+    
+    circle1=pp.Circle([0,0],circ_D/2, fill=False,color='lime',linestyle='-',lw='1.5')
+    grid2[ii].add_artist(circle1)
+ 
+    #ticks = mag_to_flux(_coltix, zp=_mag_zp[filt], scale=pxscale)
+    #cbar = pp.colorbar(im, cax=grid2.cbar_axes[0],ticks=[-0.004,-0.002,0,0.002,0.004])
+    cbar = pp.colorbar(im, cax=grid2.cbar_axes[0],ticks=[-4e-3,-2e-3,0,2e-3,4e-3])
+    cbar.set_ticklabels([r'$-$4e-3',r'$-$2e-3','0','2e-3','4e-3'])
+    grid2.cbar_axes[0].set_ylabel('e/s')
+    grid2.cbar_axes[0].yaxis.set_label_coords(4,0.5)
+    if HST:
+       ax.set_title(ttle,fontsize=10)
+    return 
+
+
 def plot_models(quasar, save_name=None):
     if HST:
-      _quasar_pat = 'data/sci_mock_{}_onlyHost.fits'
+      _host_pat = 'data/sci_mock_{}_onlyHost.fits'
+      _quasar_pat = 'data/sci_mock_{}_host_SN.fits'
       quasar = 'HST_SDSS_' + str(quasar)
       qdir = 'HST_f160w_'+quasar.split('_',1)[1]#+'_host'
       psf = fits.open('data/sci_PSF_HST_f160w_SN.fits')[0].data
@@ -75,11 +137,13 @@ def plot_models(quasar, save_name=None):
       ttle='HST'
       mark=r'$\times$'
       mark_col='red'
-      _pnorm = ImageNormalize(vmin=-0.00005, vmax=0.05, stretch=_stretch, clip=True)
-      _coltix = np.array([27,28,29])  # in mag/arcsec**2
+      _pnorm = ImageNormalize(vmin=-0.00001, vmax=0.08, stretch=_stretch, clip=True)
+      #_pnorm = ImageNormalize(vmin=-0.00005, vmax=0.01, stretch=_stretch, clip=True)
+      _coltix = np.array([26,27,28])  # in mag/arcsec**2
     
     else:
-      _quasar_pat = 'data/sci_mock_{}_onlyHost_4800s.fits'
+      _host_pat = 'data/sci_mock_{}_onlyHost_4800s.fits'
+      _quasar_pat = 'data/sci_mock_{}_host_SN_4800s.fits'
       quasar = 'JWST_SDSS_' + str(quasar)
       qdir = 'JWST_F150W_'+quasar.split('_',1)[1]#+'_host'
       psf = fits.open('data/sci_PSF_JWST_F150W_SN_4800s.fits')[0].data
@@ -89,11 +153,14 @@ def plot_models(quasar, save_name=None):
       ttle='JWST'
       mark=r'$\checkmark$'
       mark_col='limegreen'
-      _pnorm = ImageNormalize(vmin=-0.00005, vmax=0.01, stretch=_stretch, clip=True)
+      _pnorm = ImageNormalize(vmin=-0.000005, vmax=0.01, stretch=_stretch, clip=True)
       _coltix = np.array([27,28,29])  # in mag/arcsec**2
 
     if trueImage:
       ttle='True Host'
+      psfresid = fits.getdata(_host_pat.format(qdir))
+    elif originalImage:
+      ttle='Quasar'
       psfresid = fits.getdata(_quasar_pat.format(qdir))
     elif convolved: 
       raw_model = fits.open(_psfresid_pat.format(quasar)[:-28]+'raw_model.fits')[0].data
@@ -115,11 +182,9 @@ def plot_models(quasar, save_name=None):
     
     extents = np.array([-center[0], center[0],
                -center[1], center[1]])*pxscale
-
     #plot_panels = [psfresid, 'Point Source\nSubtracted']
     plot_panels = [psfresid_smooth, 'Point Source\nSubtracted']
     flx = plot_panels[0]*area_fact #puts HST on the same vertical scale (bigger pixels -> volume different).
-
     im = grid[ii].imshow(flx, extent=extents,
                                origin='lower',
                                cmap=gray_r, norm=_pnorm,
@@ -137,26 +202,32 @@ def plot_models(quasar, save_name=None):
       cbar.set_ticklabels(_coltix)
       grid.cbar_axes[1].set_ylabel('mag arcsec$^{-2}$')
       grid.cbar_axes[1].set_xlabel('mag arcsec$^{-2}$')
-    if ii<4:
-       grid[ii].set_title(ttle)#,fontsize=10)
+    if ii<5:
+       grid[ii].set_title(ttle,fontsize=10)
     if convolved:
        grid[ii].text(0.35,-0.55,mark,color=mark_col,fontsize=20)
     #grid[ii].set_title(quasar)
+    return psfresid
+
+
 
 if __name__ == '__main__':
     from sys import argv
     # import glob
     to_plot = [2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  20,  22,  23,  25,  27,  32,  36,  40,  43,  45,  46, 100]
     ##Detection for: [3  6  7 10 12 16 25 32 36 43]
-    to_plot = [43]#12]#,43]
+    to_plot = [12]#12 43
 
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(8, 3))
-    grid = ImageGrid(fig, 111, nrows_ncols=(len(to_plot)*2,4), axes_pad=0.1,
+    fig = pp.figure(figsize=(9, 3))
+    grid = ImageGrid(fig, [0.07,0.1,0.67,0.80], nrows_ncols=(len(to_plot)*2,5), axes_pad=0.1,
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='edge')
+    grid2 = ImageGrid(fig, [0.695,0.118,0.35,0.765], nrows_ncols=(len(to_plot)*2,1), axes_pad=0.1,
+                     share_all=True, label_mode='L',
+                     cbar_location='right', cbar_mode='single')
     jj=0 
     ii=0
     for quasar in to_plot:
@@ -167,43 +238,58 @@ if __name__ == '__main__':
         ###HST
         HST=1
         #ii=jj
+        originalImage=1
         plot_models(quasar, save_name=save_name)
+        originalImage=0
+        ii+=1
+        resid_array_H=plot_models(quasar, save_name=save_name)
         ii+=1
         convolved=1
         plot_models(quasar, save_name=save_name)
         ii+=1
         convolved=0
         residual=1
-        plot_models(quasar, save_name=save_name)
+        fullresid_array_H=plot_models(quasar, save_name=save_name)
         ii+=1
         residual=0
         trueImage=1
         #ii=jj+len(to_plot)
-        plot_models(quasar, save_name=save_name) 
+        true_array_H=plot_models(quasar, save_name=save_name) 
         ii+=1
         
         ###JWST
         HST=0
         trueImage=0
+        originalImage=1
+        plot_models(quasar, save_name=save_name)
+        ii+=1
+        originalImage=0
         #ii=jj+2*len(to_plot)
-        plot_models(quasar, save_name=save_name) 
+        resid_array_J=plot_models(quasar, save_name=save_name) 
         ii+=1
         convolved=1
         plot_models(quasar, save_name=save_name)
         ii+=1
         convolved=0
         residual=1
-        plot_models(quasar, save_name=save_name)
+        fullresid_array_J=plot_models(quasar, save_name=save_name)
         ii+=1
         residual=0
         trueImage=1
         #ii=jj+3*len(to_plot)
-        plot_models(quasar, save_name=save_name) 
+        true_array_J=plot_models(quasar, save_name=save_name) 
+        ii=0
+        
+        HST=1    
+        plot_difference(resid_array_H,true_array_H,fullresid_array_H,grid2[0])
         ii+=1
+        HST=0
+        plot_difference(resid_array_J,true_array_J,fullresid_array_J,grid2[1])
+
         #jj+=1"""
 
     grid[0].set_ylabel('HST')
-    grid[4].set_ylabel('JWST')
+    grid[5].set_ylabel('JWST')
 
 
     xy_format = pp.FormatStrFormatter(r'$%0.1f^{\prime\prime}$')
@@ -212,7 +298,14 @@ if __name__ == '__main__':
         ax.set_yticks(_xytix)
         ax.xaxis.set_major_formatter(xy_format)
         ax.yaxis.set_major_formatter(xy_format)
-    pp.subplots_adjust(left=0.1, bottom=0.1, right=0.92, top=0.92)
-    pp.savefig('residual_HSTvsJWST_fullPanels_2.pdf')
+        ax.yaxis.set_label_coords(-0.4,0.5)
+    for ax in grid2:
+        ax.set_xticks(_xytix)
+        ax.set_yticks([])
+        ax.xaxis.set_major_formatter(xy_format)
+        #ax.yaxis.set_major_formatter(xy_format)
+    #pp.subplots_adjust(left=0.1, bottom=0.1, right=0.92, top=0.92)
+    #pp.savefig('residual_HSTvsJWST_fullPanels_2.pdf')
+    pp.savefig('residual_HSTvsJWST_fullPanels.pdf')
     pp.show()
     pp.close(fig)

@@ -44,6 +44,9 @@ def plot_models(quasar,filt):
     #plot_panels = [psfresid, 'Point Source\nSubtracted']
     plot_panels = [resid_smooth, 'Point Source\nSubtracted']
 
+    circ_D=0.2516*1.50/6.57
+    circle1=pp.Circle([0,0],circ_D/2, fill=False,color='lime',linestyle='-',lw='1')
+    grid[ii].add_artist(circle1)
 
     im = grid[ii].imshow(plot_panels[0], extent=extents, origin='lower',
                                cmap=gray_r, norm=_pnorm,

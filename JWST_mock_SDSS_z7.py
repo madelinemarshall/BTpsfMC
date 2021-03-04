@@ -1,3 +1,4 @@
+##Works with older version of SynthObs, dust model has been changed 
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -69,7 +70,7 @@ def plot_host_quasar(data,Lquasar,axes,err_axes,f,exp_time,ii,dust=False,title=N
     img_host = images.observed(f, cosmo, z, target_width_arcsec=width,smoothing = False,  verbose=False, \
     PSF =PSFs[f],super_sampling = super_samp).particle(data.X, data.Y, Fnu,centre=[0,0,0])
   elif host:
-    img_host = images.observed(f, cosmo, z, target_width_arcsec=width,smoothing = False,  verbose=False, \
+    img_host = images.observed(f, cosmo, z, target_width_arcsec=width,smoothing = False,  verbose=True, \
     PSF =PSFs[f],super_sampling = super_samp).particle(np.append(data.X,0.), np.append(data.Y,0.), np.append(Fnu,Lquasar),centre=[0,0,0])
   else:
     img_host= images.observed(f, cosmo, z, target_width_arcsec=width,smoothing = False,  verbose=False, PSF =PSFs[f],\
@@ -87,7 +88,7 @@ def plot_host_quasar(data,Lquasar,axes,err_axes,f,exp_time,ii,dust=False,title=N
   background_object = make_background.Background(zeropoint=zeropoint, pixel_scale=pixel_scale/super_samp, \
 aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius=aperture_radius, verbose = False)
   img_bkg = background_object.create_background_image(Npixels*super_samp)
-
+  print('Sub-samp pixel scale: ',pixel_scale/super_samp)
 
   img_bkg_data=img_bkg.bkg*nJy_to_es
   bkg_sigma=background_object.pixel.noise_es*np.ones_like(img_bkg.bkg)
@@ -115,8 +116,7 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
   hdu=fits.PrimaryHDU(img_data+img_bkg_data)
   hdu_ivm=fits.PrimaryHDU(ivm)
   #hdu_ivm=fits.PrimaryHDU(np.ones_like(data_sigma)*10000)
- 
-  """ 
+  
   if onlyHost:
     if title:
       if exp_time==10000:
@@ -146,7 +146,7 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
     else:
       hdu.writeto('data/sci_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
       hdu_ivm.writeto('data/ivm_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
-  """
+  
   axes.set_facecolor('black')
 
   cax1 = fig.add_axes([0.9, 0.11, 0.02, 0.77])
@@ -248,7 +248,7 @@ if __name__=='__main__':
 
     #####HOST?
     host=True
-    onlyHost=False
+    onlyHost=True
     if host and onlyHost:
       print('__________ONLY HOST___________')
     elif host:
@@ -256,8 +256,8 @@ if __name__=='__main__':
     else:
       print('__________ONLY QUASAR___________')
 
-    filters = [FLARE.filters.NIRCam_W[7]]
-    #filters = [FLARE.filters.MIRI[0]]
+    #filters = [FLARE.filters.NIRCam_W[7]]
+    filters = [FLARE.filters.MIRI[0]]
     filt_str=(filters[0].split('.')[-1])
     print('filter: ',filt_str)
     F = FLARE.filters.add_filters(filters, new_lam = model.lam* (1.+z))
@@ -284,7 +284,7 @@ if __name__=='__main__':
     if exp_time==10000:
       aperture_flux_limits={'JWST.NIRCAM.F090W':15.3, 'JWST.NIRCAM.F115W':13.2,
        'JWST.NIRCAM.F150W':10.6, 'JWST.NIRCAM.F200W':9.1, 'JWST.NIRCAM.F277W':14.3, 
-       'JWST.NIRCAM.F356W':12.1, 'JWST.NIRCAM.F444W':23.6,'JWST.MIRI.F560W':130} #sensitivity at 10ks in nJy, 10 sigma
+       'JWST.NIRCAM.F356W':12.1, 'JWST.NIRCAM.F444W':23.6,'JWST.MIRI.F560W':130,'JWST.MIRI.F770W':240} #sensitivity at 10ks in nJy, 10 sigma
       aperture_f_limit = aperture_flux_limits[filters[0]]
     else:
       if filters[0]=='JWST.NIRCAM.F200W':

@@ -74,11 +74,10 @@ def plot_models(quasar, save_name=None):
       qdir = 'HST_f160w_'+quasar.split('_',1)[1]#+'_host'
       pxscale = 0.13/2 #arcsec
       _psfresid_pat=_psfresid_pat_H+'point_source_subtracted.fits'
-      #raw_model = fits.open(_psfresid_pat_H.format(quasar)+'raw_model.fits')[0].data
-      #psf = fits.open('data/sci_PSF_HST.fits')[0].data
+      raw_model = fits.open(_psfresid_pat_H.format(quasar)+'raw_model.fits')[0].data
+      psf = fits.open('data/sci_PSF_HST.fits')[0].data
       area_fact=0.0569
       ttle='HST WFC3\nF160W'
-      circ_D=0.2516*1.60/2.4 #arcsec
     
     else:
       _quasar_pat = 'data/sci_mock_{}_onlyHost_4800s.fits'
@@ -87,11 +86,10 @@ def plot_models(quasar, save_name=None):
       qdir = 'JWST_F150W_'+quasar.split('_',1)[1]#+'_host'
       pxscale = 0.031/2
       _psfresid_pat=_psfresid_pat_J+'point_source_subtracted.fits'
-      #raw_model = fits.open(_psfresid_pat_J.format(quasar)+'raw_model.fits')[0].data
-      #psf = fits.open('data/sci_PSF_JWST_F200W_SN.fits')[0].data
+      raw_model = fits.open(_psfresid_pat_J.format(quasar)+'raw_model.fits')[0].data
+      psf = fits.open('data/sci_PSF_JWST_F200W_SN.fits')[0].data
       area_fact=1
       ttle='JWST NIRCam\nF150W'
-      circ_D=0.2516*1.50/6.57
 
 
     if trueImage:
@@ -100,6 +98,13 @@ def plot_models(quasar, save_name=None):
     elif PSF:
       grid[ii].set_xlabel('Quasar Image')
       psfresid = fits.getdata(_full_pat.format(qdir)) 
+    elif sersic:
+      raw_model = fits.open(_psfresid_pat.format(quasar)[:-28]+'raw_model.fits')[0].data
+      convolved_model = make_convolved(raw_model,psf)
+      #subtrac = fits.getdata(_psfresid_pat.format(quasar))
+      #resid = fits.open(_psfresid_pat.format(quasar)[:-28]+'residual.fits')[0].data
+      grid[ii].set_xlabel('Sersic Model')
+      psfresid = convolved_model
     else:
       grid[ii].set_xlabel('PSF-Subtracted')
       psfresid = fits.getdata(_psfresid_pat.format(quasar))
@@ -115,9 +120,6 @@ def plot_models(quasar, save_name=None):
     
     extents = np.array([-center[0], center[0],
                -center[1], center[1]])*pxscale
-    
-    #circle1=pp.Circle([0,0],circ_D/2, fill=False,color='lime',linestyle='-',lw='1.5')
-    #grid[ii].add_artist(circle1)
 
     plot_panels = [psfresid, 'Point Source\nSubtracted']
     #plot_panels = [resid_smooth, 'Point Source\nSubtracted']
@@ -139,7 +141,7 @@ def plot_models(quasar, save_name=None):
     #grid.cbar_axes[0].set_xlabel('mag arcsec$^{-2}$')
     #if ii==0 or ii==2:
     #   grid[ii].text(0.5,0.7,ttle)
-    if ii==0 or ii==3:
+    if ii==0 or ii==4:
       grid[ii].set_ylabel(ttle)#,fontsize=10)
 
 if __name__ == '__main__':
@@ -151,8 +153,8 @@ if __name__ == '__main__':
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(6, 3.6))
-    grid = ImageGrid(fig, 111, nrows_ncols=(len(to_plot)*2,3), axes_pad=0.1,
+    fig = pp.figure(figsize=(10, 3.6))
+    grid = ImageGrid(fig, 111, nrows_ncols=(len(to_plot)*2,4), axes_pad=0.1,
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='single')
     jj=0 
@@ -160,12 +162,17 @@ if __name__ == '__main__':
     for quasar in to_plot:
         save_name = 'output_image_{}.pdf'.format(quasar) if 'save' in argv else None
         trueImage=0
+        sersic=0
         HST=1
         PSF=1
         #ii=jj
         plot_models(quasar, save_name=save_name)
         ii+=1
         PSF=0
+        sersic=1
+        plot_models(quasar, save_name=save_name)
+        ii+=1
+        sersic=0
         plot_models(quasar, save_name=save_name)
         ii+=1
         trueImage=1
@@ -181,6 +188,10 @@ if __name__ == '__main__':
         plot_models(quasar, save_name=save_name) 
         ii+=1
         PSF=0
+        sersic=1
+        plot_models(quasar, save_name=save_name)
+        ii+=1
+        sersic=0
         plot_models(quasar, save_name=save_name) 
         ii+=1
         trueImage=1
@@ -190,8 +201,8 @@ if __name__ == '__main__':
         #jj+=1"""
  
 
-    grid[1].text(-0.53,-0.685,'No Detection',color='k',bbox=dict(facecolor='red', alpha=1),size=9)
-    grid[4].text(-0.81,-0.685,'Successful Detection',color='k',bbox=dict(facecolor='limegreen', alpha=1),size=9)
+    #grid[1].text(-0.53,-0.685,'No Detection',color='k',bbox=dict(facecolor='red', alpha=1),size=9)
+    #grid[4].text(-0.81,-0.685,'Successful Detection',color='k',bbox=dict(facecolor='limegreen', alpha=1),size=9)
  
     xy_format = pp.FormatStrFormatter(r'$%0.1f^{\prime\prime}$')
     for ii in range(0,len(to_plot)*4):
@@ -201,6 +212,6 @@ if __name__ == '__main__':
         ax.xaxis.set_major_formatter(xy_format)
         ax.yaxis.set_major_formatter(xy_format)
     pp.subplots_adjust(left=0.15, bottom=0.15, right=0.9, top=0.9)
-    pp.savefig('residual_HSTvsJWST_proposal.pdf')
+    pp.savefig('residual_HSTvsJWST_talk.pdf')
     pp.show()
     pp.close(fig)

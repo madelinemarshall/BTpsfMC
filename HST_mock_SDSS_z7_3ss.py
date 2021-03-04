@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import time
 import sys
@@ -50,7 +50,7 @@ def plot_host(data,axes,f,dust=False):
   return
 
 
-def plot_host_quasar(data,Lquasar,axes,err_axes,f,dust=False,title=None):
+def plot_host_quasar(data,Lquasar,axes,err_axes,f,exp_time,dust=False,title=None):
   #Lquasar*=4
   print('Fquasar (nJy) ',Lquasar)
 
@@ -61,7 +61,8 @@ def plot_host_quasar(data,Lquasar,axes,err_axes,f,dust=False,title=None):
   else:
     Fnu = models.generate_Fnu_array(model, data.Masses, data.Ages, data.Metallicities, np.zeros_like(data.Masses), F, f) # arrays of star particle fluxes in nJy
 
-  super_samp=2
+  super_samp=3
+  print(pixel_scale,pixel_scale/super_samp)
 
   if onlyHost:
     img_host = images.observed(f, cosmo, z, target_width_arcsec=width,smoothing = False,  verbose=True, \
@@ -72,6 +73,13 @@ def plot_host_quasar(data,Lquasar,axes,err_axes,f,dust=False,title=None):
   else:
     img_host= images.observed(f, cosmo, z, target_width_arcsec=width,smoothing = False,  verbose=True, PSF =PSFs[f],\
     super_sampling=super_samp).particle(np.array([0.]), np.array([0.]), np.array([Lquasar]),centre=[0,0,0])
+  
+  img_data=img_host.super.data*nJy_to_es 
+ 
+  #Add shot noise 
+  full_img = img_data * exp_time
+  noisy_full_img = np.random.poisson(full_img)
+  img_data = noisy_full_img / exp_time
 
   # create background image object (cutoutwidth in pixels)
   background_object = make_background.Background(zeropoint=zeropoint, pixel_scale=pixel_scale/super_samp, \
@@ -82,50 +90,33 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
   img_bkg_data=img_bkg.bkg*nJy_to_es
   bkg_sigma=background_object.pixel.noise_es*np.ones_like(img_bkg.bkg)
 
-  img_data=img_host.super.data*nJy_to_es 
-  mx=np.amax(img_data)
-  
-  full_img = img_data * exp_time
-  noisy_full_img = np.random.poisson(full_img)
-  img_data = noisy_full_img / exp_time
+  #data_sigma=np.sqrt(img_data)
   
   y,x=np.mgrid[0:len(img_bkg.bkg),0:len(img_bkg.bkg)]
   gauss=Gaussian2D(np.max(img_data)/5000,len(img_bkg.bkg)/2-1.5,len(img_bkg.bkg)/2-1.5,2,2)(x,y)
-  print(np.max(img_data)/5000)
   print('Center loc: ',len(img_bkg.bkg)/2-1.5) 
   ivm=1/((bkg_sigma*super_samp)**2+(gauss))
   var=1/ivm
 
+  mx=np.amax(img_data)
   mx_var=np.amax(ivm)
  
   img1 = axes.imshow(img_data+img_bkg_data,cmap='magma', norm=LogNorm(vmin = mx/10000, vmax=mx))
-  img2 = err_axes.imshow(ivm,cmap='magma', norm=LogNorm(vmin = mx_var/100, vmax=mx_var))#, vmin = mx -3, vmax=mx)
+  img2 = err_axes.imshow(ivm,cmap='magma', norm=LogNorm(vmin = mx_var/1e5, vmax=mx_var/10))#, vmin = mx -3, vmax=mx)
  
-  hdu=fits.PrimaryHDU(img_data+img_bkg_data)
-  hdu_ivm=fits.PrimaryHDU(ivm)
+  hdu=fits.PrimaryHDU(img_data[:104,:104]+img_bkg_data[:104,:104])
+  hdu_ivm=fits.PrimaryHDU(ivm[:104,:104])
   #hdu_ivm=fits.PrimaryHDU(np.ones_like(data_sigma)*10000)
   
   if onlyHost:
-    if title:
-      hdu.writeto('data/sci_mock_JWST_{}_{}_onlyHost.fits'.format(filt_str,title),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}_onlyHost.fits'.format(filt_str,title),overwrite=True)
-    else:
-      hdu.writeto('data/sci_mock_JWST_{}_onlyHost.fits'.format(filt_str),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}_onlyHost.fits'.format(filt_str),overwrite=True)
+      hdu.writeto('data/sci_mock_HST_{}_{}_onlyHost_3ss.fits'.format(filt_str,title),overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_HST_{}_{}_onlyHost_3ss.fits'.format(filt_str,title),overwrite=True)
   elif host:
-    if title:
-      hdu.writeto('data/sci_mock_JWST_{}_{}_host.fits'.format(filt_str,title),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}_host.fits'.format(filt_str,title),overwrite=True)
-    else:
-      hdu.writeto('data/sci_mock_JWST_{}_host.fits'.format(filt_str),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}_host.fits'.format(filt_str),overwrite=True)
+      hdu.writeto('data/sci_mock_HST_{}_{}_host_SN_3ss.fits'.format(filt_str,title),overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_HST_{}_{}_host_SN_3ss.fits'.format(filt_str,title),overwrite=True)
   else:
-    if title:
-      hdu.writeto('data/sci_mock_JWST_{}_{}.fits'.format(filt_str,title),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}.fits'.format(filt_str,title),overwrite=True)
-    else:
-      hdu.writeto('data/sci_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
+      hdu.writeto('data/sci_mock_HST_{}_{}_3ss.fits'.format(filt_str,title),overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_HST_{}_{}_3ss.fits'.format(filt_str,title),overwrite=True)
 
   axes.set_facecolor('black')
 
@@ -220,7 +211,7 @@ def face_on(p,mass,th=-1,centre=None): # p in [[x1,y1,z1],[x2,y2,z2],...]
 if __name__=='__main__':
     #Setup
     cosmo = FLARE.default_cosmo()
-    z = 6
+    z = 7
 
     dust=True
     model = models.define_model('BPASSv2.2.1.binary/ModSalpeter_300') # DEFINE SED GRID -
@@ -228,48 +219,38 @@ if __name__=='__main__':
 
     #####HOST?
     host=True
-    onlyHost=True
+    onlyHost=False
 
-    filters = [FLARE.filters.MIRI[0]]
+    filters = [FLARE.filters.WFC3NIR_W[3]]    
     filt_str=(filters[0].split('.')[-1])
-    print('filter: ',filt_str)
     F = FLARE.filters.add_filters(filters, new_lam = model.lam* (1.+z))
-    PSFs = PSF.Webb(filters, resampling_factor = 5) # creates a dictionary of instances of the webbPSF class
+    PSFs = PSF.Hubble(filters)
 
-    width=3 #size of cutout in ''
+    width=4.6#8.33#7.81 #size of cutout in ''  #MUST RESULT IN EVEN NUMBER OF PIXELS
     FOV=width/cosmo.arcsec_per_kpc_proper(z).value #size of cutout in kpc
     smoothing = None#('adaptive',60)
    
     pixel_scale = FLARE.filters.pixel_scale[filters[0]]     # arcsec/pixel (for NIRCam SW)
-    print(pixel_scale)
     Npixels = int(width/pixel_scale) #20#width of image / resolution
     
     #resolution = 0.065/cosmo.arcsec_per_kpc_proper(z).value #for WFC3 IR
     #.13 arcsec/pixel resolution for WFC3 IR
     #resolution = 0.13/cosmo.arcsec_per_kpc_proper(z).value
     
-    resolution = 0.0125 #kpc/image pixel I think...
+    resolution = 0.0125 #kpc/image pixel I think..., something to do with BT
     Ndim = int(FOV/resolution) #20#width of image / resolution
     #background setup
     aperture_radius = 2.5*pixel_scale         # aperture radius in arcsec
     zeropoint = 25.946              # AB mag zeropoint, doesn't have any effect
     nJy_to_es = 1E-9 * 10**(0.4*(zeropoint-8.9))
-    exp_time=10000
-    aperture_flux_limits={'JWST.MIRI.F560W':130,'JWST.MIRI.F770W':240, 'JWST.NIRCAM.F115W':13.2}
-    aperture_f_limit = aperture_flux_limits[filters[0]]
+    #aperture_f_limit = 9.1        # aperture flux limit (nJy) (F115W in 10ks, 10 sigma)
+    aperture_f_limit = 48 #guess based on HST ivm maps        # aperture flux limit (nJy) (F115W in 10ks, 10 sigma)
     ap_sig = 10
-    #https://jwst-docs.stsci.edu/near-infrared-camera/nircam-predicted-performance/nircam-sensitivity
+    exp_time = 4800
     r = aperture_radius/pixel_scale # aperture radius in pixels
 
     #Quasar sample setup
-    ###NOTE: Need to extract these numbers from BH_spectra_z7_dust
-    BHsamples=['SDSS_AGN_dust/9'] 
-    titles=['SDSS']
-    tau_UV=[1.165] #Min tau UV for MMBH, CO, WFIRST
-    #BHsamples=['SDSS_AGN_dust/9'] 
-    #titles=[None]#['SDSS']
-    #tau_UV=[1.165] #Min tau UV for MMBH, CO, WFIRST
-    dust_atten=np.exp(-np.array(tau_UV))#Need metallicity factor
+    sample='SDSS'
 
     orientation='face_on'#None,'face_on','edge_on'    # Initialise background(s)
 
@@ -278,14 +259,29 @@ if __name__=='__main__':
 
     folder='/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/'
 
-    fig, axes = plt.subplots(1,1, figsize = (5,5))
-    err_fig, err_axes = plt.subplots(1,1, figsize = (5,5))
+    df=pd.read_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase.pkl')
+    
+    num_samps=len(df.loc[(df['Sample']==sample)])
+    
+    
+       
+    for ii in range(0,num_samps):
+      fig, axes = plt.subplots(1,1, figsize = (5,5))
+      err_fig, err_axes = plt.subplots(1,1, figsize = (5,5))
+    
+      index=df.loc[(df['Sample']==sample)].iloc[ii]['Index']
+      if index!=41:
+        tau_UV=df.loc[(df['Sample']==sample)].iloc[ii]['tau_UV_AGN']
+        dust_atten=np.exp(tau_UV)
 
-    for ii,BH in enumerate(BHsamples):
-      data = SynthObs.bluetides_data('PIG_208/processed_data/'+str(BH),dust=True)
-      data=get_positions(data,orientation)
-      Fquasar=load_quasar(folder+str(BH)+'/run_cloudy.con',filters[0],F)
-      plot_host_quasar(data,Fquasar*dust_atten[ii],axes,err_axes,filters[0],dust=True,title=titles[ii])
+        BH=sample+'_AGN_dust/'+str(index)
+        #print(BH,tau_UV)
+
+
+        data = SynthObs.bluetides_data('PIG_208/processed_data/'+str(BH),dust=True)
+        data=get_positions(data,orientation)
+        Fquasar=load_quasar(folder+str(BH)+'/run_cloudy.con',filters[0],F)
+        plot_host_quasar(data,Fquasar*dust_atten,axes,err_axes,filters[0],exp_time,dust=True,title=sample+'_'+str(index))
  
     #plt.savefig('/home/mmarshal/results/plots/BTpsfMC/mock_F200W.pdf')
     plt.show()

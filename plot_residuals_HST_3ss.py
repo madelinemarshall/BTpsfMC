@@ -13,16 +13,21 @@ from astropy.visualization.mpl_normalize import ImageNormalize
 from matplotlib import rc
 rc('font', family='serif')
 
-_psfresid_pat = 'data/sci_mock_JWST_{}_{}_onlyHost.fits'
-_mag_zp = 25.9463
+#_psfresid_pat = 'runHST/SDSS_z7_3ss/mcmc_out_mock_{}_point_source_subtracted.fits'
+_psfresid_pat = 'runHST/SDSS_z7_3ss/mcmc_out_mock_{}_point_source_subtracted.fits'
+_quasar_pat = 'data/sci_mock_{}_host_SN_3ss.fits'
+#_psfresid_pat = 'data/ivm_mock_{}_host_SN.fits'
+_mag_zp = {'F125W': 26.2303, 'F160W': 25.9463}
 
 _stretch = AsinhStretch()
 _stretch.a = (0.01 - 0.0001)/2 / (0.01+0.0001)
+#_stretch.a = (0.01 - 0.012)/2 / (0.01+0.012)
 _pnorm = ImageNormalize(vmin=-0.0001, vmax=0.01, stretch=_stretch, clip=True)
-_axis_range = [-0.6,0.6,-0.6,0.6]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
+#_pnorm = ImageNormalize(vmin=-0.012, vmax=0.01)#, stretch=_stretch, clip=True)
+_axis_range = [-2,2,-2,2]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
 #_xytix = [-3,-2, -1, 0, 1, 2,3]  # in arcsec
-_xytix = [-0.5, 0, 0.5]  # in arcsec
-_coltix = np.array([27,28,29])  # in mag/arcsec**2
+_xytix = [-1, 0, 1]  # in arcsec
+_coltix = np.array([23, 24, 25, 26])  # in mag/arcsec**2
 
 gray_r = pp.cm.cmap_d['Spectral_r']
 
@@ -31,34 +36,45 @@ def mag_to_flux(mag, zp=0.0, scale=(1.0, 1.0)):
     return 10**(-0.4*(mag - zp)) * np.prod(scale)
 
 
-def plot_models(quasar,filt):
-    psfresid = fits.getdata(_psfresid_pat.format(filt,quasar))
+def plot_models(quasar, save_name=None):
+    qdir = 'HST_f160w_'+quasar.split('_',1)[1]#+'_host'
+    psfresid = fits.getdata(_psfresid_pat.format(quasar))
+    quasardata = fits.getdata(_quasar_pat.format(qdir))
+
+    #print('Max flux quasar: ',np.amax(quasar))
+    #print('Max flux residual: ',np.amax(psfresid))
+    #print('Flux ratio: ',np.amax(psfresid)/np.amax(quasar))
+    #print('Centre flux quasar: ',quasar[95,95])
+    #print('Centre flux residual: ',psfresid[95,95])
+    flux_ratio=psfresid[46,46]/quasardata[46,46]
+    #print('Flux ratio: ',psfresid[95,95]/quasar[95,95])
+    if flux_ratio>0.05:
+      print('BAD: ',flux_ratio,quasar)
+    else: 
+      print('OK: ',flux_ratio,quasar)
+   
+   
+    filt = 'F160W'
     #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
-    resid_smooth = gaussian_filter(psfresid, (1, 1))
+    resid_smooth = gaussian_filter(psfresid, (2, 2))
 
     center = np.array(psfresid.shape)[::-1]/2
-    pxscale = 0.031/2
+    pxscale = 0.13/2 #arcsec
     extents = np.array([-center[0], center[0],
                -center[1], center[1]])*pxscale
 
-    #plot_panels = [psfresid, 'Point Source\nSubtracted']
-    plot_panels = [resid_smooth, 'Point Source\nSubtracted']
+    plot_panels = [psfresid, 'Point Source\nSubtracted']
+    #plot_panels = [resid_smooth, 'Point Source\nSubtracted']
+
 
     im = grid[ii].imshow(plot_panels[0], extent=extents, origin='lower',
                                cmap=gray_r, norm=_pnorm,
                                interpolation='nearest')
-    if int(quasar.split('_')[-1]) in undetectable:
-      mark=r'$\times$'
-      mark_col='red'
-    else:
-      mark=r'$\checkmark$'
-      mark_col='limegreen'
     grid[ii].axis(_axis_range)
-    grid[ii].text(0.3,-0.45,mark,color=mark_col,fontsize=20)
     
-    ticks = mag_to_flux(_coltix, zp=_mag_zp, scale=pxscale)
-    cbar = pp.colorbar(im, cax=grid.cbar_axes[0], ticks=ticks)
-    cbar.set_ticklabels(_coltix)
+    ticks = mag_to_flux(_coltix, zp=_mag_zp[filt], scale=pxscale)
+    cbar = pp.colorbar(im, cax=grid.cbar_axes[0])#, ticks=ticks)
+    #cbar.set_ticklabels(_coltix)
     grid.cbar_axes[0].set_ylabel('mag arcsec$^{-2}$')
     grid.cbar_axes[0].set_xlabel('mag arcsec$^{-2}$')
 
@@ -68,40 +84,29 @@ if __name__ == '__main__':
     from sys import argv
     # import glob
     to_plot = [2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  20,  22,  23,  25,  27,  32,  36,  40,  43,  45,  46, 100]
-    detectable = [2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  22,  25,  27,  32,  36,  40,  43,  45, 100] #detectable
-    #undetectable = [20, 23, 46] #undetectable in F200W
-    undetectable = [2,8,20,23,46,100] #undectable in >2 filters
-    
 
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(10, 6))
+    fig = pp.figure(figsize=(10, 10))
     grid = ImageGrid(fig, 111, nrows_ncols=(4, int(np.ceil(len(to_plot)/4))), axes_pad=0.1,
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='single')
    
-    if len(argv)>1:
-      filt=str(argv[1])
-    else:
-      filt='F200W'
-
     ii=0 
     for quasar in to_plot:
-        quasar = 'SDSS_' + str(quasar)
-        plot_models(quasar,filt)
+        quasar = 'HST_SDSS_' + str(quasar)
+        save_name = 'output_image_{}.pdf'.format(quasar) if 'save' in argv else None
+        plot_models(quasar, save_name=save_name)
         ii+=1
    
-    xy_format = pp.FormatStrFormatter(r'$%0.1f^{\prime\prime}$')
+    xy_format = pp.FormatStrFormatter(r'$%0.0f^{\prime\prime}$')
     for ax in grid:
         ax.set_xticks(_xytix)
         ax.set_yticks(_xytix)
         ax.xaxis.set_major_formatter(xy_format)
         ax.yaxis.set_major_formatter(xy_format)
-    pp.subplots_adjust(left=0.08, bottom=0.1, right=0.91, top=0.92)
-    grid[-1].axis('off')
-    grid[-2].axis('off')
-    pp.savefig('SDSS_z7_trueHosts.pdf')
+    pp.subplots_adjust(left=0.08, bottom=0.28, right=0.91, top=0.92)
+    #pp.savefig('SDSS_z7_residual_star_HST.pdf')
     pp.show() 
     pp.close(fig)
-    
