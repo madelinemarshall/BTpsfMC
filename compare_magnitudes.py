@@ -14,7 +14,6 @@ def flux_to_mag(flux, zp=0.0):
     return -2.5*np.log10(flux) + zp
 
 
-
 df=pd.read_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase_processed.pkl')
 #df=pd.read_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase.pkl')
 df=df[df['Sample']=='SDSS']

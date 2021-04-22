@@ -47,7 +47,7 @@ def plot_PSF(LPSF,axes,ivm_axes,f,err):
   print(LPSF)
   imgs = {}
 
-  super_samp=2
+  super_samp=3
   img = images.observed(f, cosmo, z, target_width_arcsec=width,smoothing = False,  verbose=True, PSF =PSFs[f],super_sampling=super_samp).particle(np.array([0.]), np.array([0.]), np.array([LPSF]),centre=[0,0,0])
 
   # create background image object (cutoutwidth in pixels)
@@ -98,8 +98,8 @@ def plot_PSF(LPSF,axes,ivm_axes,f,err):
     hdu_ivm.writeto('data/ivm_PSF_JWST_{}_{}'.format(filt_str,err).replace('.','p')+'.fits',overwrite=True)
   else:
       if exp_time==10000:
-        hdu.writeto('data/sci_PSF_JWST_{}_SN.fits'.format(filt_str),overwrite=True)
-        hdu_ivm.writeto('data/ivm_PSF_JWST_{}_SN.fits'.format(filt_str),overwrite=True)
+        hdu.writeto('data/sci_PSF_JWST_{}_SN_3ss.fits'.format(filt_str),overwrite=True)
+        hdu_ivm.writeto('data/ivm_PSF_JWST_{}_SN_3ss.fits'.format(filt_str),overwrite=True)
       else:
         hdu.writeto('data/sci_PSF_JWST_{}_SN_{}s.fits'.format(filt_str,exp_time),overwrite=True)
         hdu_ivm.writeto('data/ivm_PSF_JWST_{}_SN_{}s.fits'.format(filt_str,exp_time),overwrite=True)
@@ -149,8 +149,8 @@ if __name__=='__main__':
     model = models.define_model('BPASSv2.2.1.binary/ModSalpeter_300') # DEFINE SED GRID -
     model.dust = {'A': 4.6, 'slope': -1.0}
 
-    #filters = [FLARE.filters.NIRCam_W[2]]
-    filters = [FLARE.filters.MIRI[1]]
+    filters = [FLARE.filters.NIRCam_W[3]]
+    #filters = [FLARE.filters.MIRI[1]]
     filt_str=(filters[0].split('.')[-1])
     print('filter: ',filt_str)
     F = FLARE.filters.add_filters(filters, new_lam = model.lam* (1.+z))

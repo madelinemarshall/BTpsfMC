@@ -21,7 +21,7 @@ _mag_zp = {'F125W': 26.2303, 'F160W': 25.9463}
 
 _stretch = AsinhStretch()
 _stretch.a = (0.01 - 0.0001)/2 / (0.01+0.0001)
-_axis_range = [-0.7,0.7,-0.7,0.7]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
+_axis_range = [-0.9,0.9,-0.9,0.9]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
 #_xytix = [-3,-2, -1, 0, 1, 2,3]  # in arcsec
 _xytix = [-0.5, 0, 0.5]  # in arcsec
 
@@ -84,6 +84,7 @@ def plot_difference(resid,true,fullresid, ax):
     _coltix = np.array([28,29,30])  # in mag/arcsec**2
     #psfresid_smooth=(resid - true)#/true   
     psfresid_smooth = gaussian_filter(resid-true, (1, 1))
+    #psfresid_smooth = resid-true
     ttle=r'PSF-Subtracted $-$ True Host'
     filt = 'F160W'
     
@@ -177,6 +178,7 @@ def plot_models(quasar, save_name=None):
     filt = 'F160W'
     #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
     psfresid_smooth = gaussian_filter(psfresid, (1, 1))
+    #psfresid_smooth = psfresid
 
     center = np.array(psfresid.shape)[::-1]/2
     
@@ -216,7 +218,7 @@ if __name__ == '__main__':
     # import glob
     to_plot = [2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  20,  22,  23,  25,  27,  32,  36,  40,  43,  45,  46, 100]
     ##Detection for: [3  6  7 10 12 16 25 32 36 43]
-    to_plot = [12]#12 43
+    to_plot = [43]#12 43
 
     if 'test' in argv:
         to_plot = to_plot[0:1]
@@ -224,10 +226,10 @@ if __name__ == '__main__':
     fig = pp.figure(figsize=(9, 3))
     grid = ImageGrid(fig, [0.07,0.1,0.67,0.80], nrows_ncols=(len(to_plot)*2,5), axes_pad=0.1,
                      share_all=True, label_mode='L',
-                     cbar_location='right', cbar_mode='edge')
+                     cbar_location='right', cbar_mode='edge',cbar_size=0.08)
     grid2 = ImageGrid(fig, [0.695,0.118,0.35,0.765], nrows_ncols=(len(to_plot)*2,1), axes_pad=0.1,
                      share_all=True, label_mode='L',
-                     cbar_location='right', cbar_mode='single')
+                     cbar_location='right', cbar_mode='single',cbar_size=0.08)
     jj=0 
     ii=0
     for quasar in to_plot:
@@ -305,7 +307,8 @@ if __name__ == '__main__':
         ax.xaxis.set_major_formatter(xy_format)
         #ax.yaxis.set_major_formatter(xy_format)
     #pp.subplots_adjust(left=0.1, bottom=0.1, right=0.92, top=0.92)
-    #pp.savefig('residual_HSTvsJWST_fullPanels_2.pdf')
-    pp.savefig('residual_HSTvsJWST_fullPanels.pdf')
+    pp.savefig('residual_HSTvsJWST_fullPanels_2.pdf')
+    #pp.savefig('residual_HSTvsJWST_fullPanels.pdf')
+    #pp.savefig('residual_HSTvsJWST_fullPanels_noSmooth.pdf')
     pp.show()
     pp.close(fig)

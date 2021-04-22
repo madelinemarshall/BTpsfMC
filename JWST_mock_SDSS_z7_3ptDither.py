@@ -64,7 +64,7 @@ def plot_host_quasar(data,Lquasar,axes,err_axes,f,exp_time,ii,dust=False,title=N
 
   df.loc[ii,filt_str+' Flux']=np.sum(Fnu*nJy_to_es)
 
-  super_samp=2
+  super_samp=3
 
   if onlyHost:
     img_host = images.observed(f, cosmo, z, target_width_arcsec=width,smoothing = False,  verbose=False, \
@@ -120,36 +120,17 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
   if onlyHost:
     if title:
       if exp_time==10000:
-        hdu.writeto('data/sci_mock_JWST_{}_{}_onlyHost.fits'.format(filt_str,title),overwrite=True)
-        hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}_onlyHost.fits'.format(filt_str,title),overwrite=True)
-      else:
-        hdu.writeto('data/sci_mock_JWST_{}_{}_onlyHost_{}s.fits'.format(filt_str,title,exp_time),overwrite=True)
-        hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}_onlyHost_{}s.fits'.format(filt_str,title,exp_time),overwrite=True)
-    else:
-      hdu.writeto('data/sci_mock_JWST_{}_onlyHost.fits'.format(filt_str),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}_onlyHost.fits'.format(filt_str),overwrite=True)
+        hdu.writeto('data/sci_mock_JWST_{}_{}_onlyHost_3ss.fits'.format(filt_str,title),overwrite=True)
+        hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}_onlyHost_3ss.fits'.format(filt_str,title),overwrite=True)
   elif host:
     if title:
       if exp_time==10000:
-        hdu.writeto('data/sci_mock_JWST_{}_{}_host_SN.fits'.format(filt_str,title),overwrite=True)
-        hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}_host_SN.fits'.format(filt_str,title),overwrite=True)
-      else:
-        hdu.writeto('data/sci_mock_JWST_{}_{}_host_SN_{}s.fits'.format(filt_str,title,exp_time),overwrite=True)
-        hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}_host_SN_{}s.fits'.format(filt_str,title,exp_time),overwrite=True)
-    else:
-      hdu.writeto('data/sci_mock_JWST_{}_host.fits'.format(filt_str),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}_host.fits'.format(filt_str),overwrite=True)
-  elif no_noise:
-      ##Only for exp_time 10000
-      hdu_nonoise=fits.PrimaryHDU(img_data)
-      hdu_nonoise.writeto('data/sci_mock_JWST_{}_{}_noNoise.fits'.format(filt_str,title),overwrite=True)
+        hdu.writeto('data/sci_mock_JWST_{}_{}_host_SN_3ss.fits'.format(filt_str,title),overwrite=True)
+        hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}_host_SN_3ss.fits'.format(filt_str,title),overwrite=True)
   else:
     if title:
-      hdu.writeto('data/sci_mock_JWST_{}_{}.fits'.format(filt_str,title),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}.fits'.format(filt_str,title),overwrite=True)
-    else:
-      hdu.writeto('data/sci_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
-      hdu_ivm.writeto('data/ivm_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
+      hdu.writeto('data/sci_mock_JWST_{}_{}_3ss.fits'.format(filt_str,title),overwrite=True)
+      hdu_ivm.writeto('data/ivm_mock_JWST_{}_{}_3ss.fits'.format(filt_str,title),overwrite=True)
   
   axes.set_facecolor('black')
 
@@ -252,8 +233,8 @@ if __name__=='__main__':
 
     #####HOST?
     host=True
-    onlyHost=False
-    no_noise=True
+    onlyHost=True
+    no_noise=False
     if no_noise:
       host=False
       onlyHost=False
@@ -265,8 +246,8 @@ if __name__=='__main__':
     else:
       print('__________ONLY QUASAR___________')
 
-    #filters = [FLARE.filters.NIRCam_W[7]]
-    filters = [FLARE.filters.MIRI[1]]
+    filters = [FLARE.filters.NIRCam_W[3]]
+    #filters = [FLARE.filters.MIRI[1]]
     filt_str=(filters[0].split('.')[-1])
     print('filter: ',filt_str)
     F = FLARE.filters.add_filters(filters, new_lam = model.lam* (1.+z))
@@ -352,8 +333,6 @@ if __name__=='__main__':
         plot_host_quasar(data,Fquasar*dust_atten,axes,err_axes,filters[0],exp_time,ii,dust=True,title=sample+'_'+str(index))
       plt.close()
     
-    df.to_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase.pkl')
- 
     #plt.savefig('/home/mmarshal/results/plots/BTpsfMC/mock_F200W.pdf')
     #plt.show()
 

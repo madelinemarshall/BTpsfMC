@@ -107,7 +107,7 @@ if __name__=='__main__':
     success[filt],detect_rate[filt]=assess_quasar(folder_noHost,folder_host,fname,quasars)
   
   for filt in ['F115W','F150W','F277W','F356W','F444W']:
-    print(filt)
+    print(filt+' 5 ks')
     folder_noHost = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_'+filt+'_5000s_noHost/'
     folder_host = '/home/mmarshal/BLUETIDES/codes/BTpsfMC/runJWST/SDSS_z7_'+filt+'_5000s/'
     success[filt+' 5 ks'],detect_rate[filt+' 5 ks']=assess_quasar(folder_noHost,folder_host,fname,quasars)

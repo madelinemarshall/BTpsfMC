@@ -18,7 +18,8 @@ import matplotlib.gridspec as gridspec
 rc('font', family='serif')
 matplotlib.rcParams['font.size'] = (9)
 
-_true_pat = 'data/sci_mock_JWST_{}_{}_onlyHost.fits'
+#_true_pat = 'data/sci_mock_JWST_{}_{}_onlyHost.fits'
+_true_pat = 'runJWST/AGNcentreTest/mcmc_out_mock_JWST_{}_point_source_subtracted.fits'
 _psfresid_pat = 'runJWST/SDSS_z7_SN/mcmc_out_mock_JWST_{}_point_source_subtracted.fits'
 _mag_zp = 25.9463
 
@@ -43,7 +44,7 @@ def plot_models(quasar,filt):
     resid_smooth = gaussian_filter(psfresid, (1, 1))
     #resid_smooth = psfresid
 
-    true = fits.getdata(_true_pat.format(filt,quasar))
+    true = fits.getdata(_true_pat.format(quasar))
     #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
     true_smooth = gaussian_filter(true, (1, 1))
     #true_smooth = true
@@ -69,8 +70,8 @@ def plot_models(quasar,filt):
       mark=r'$\checkmark$'
       mark_col='limegreen'
     grid[ii].axis(_axis_range)
-    grid[ii].text(0.25,-0.52,mark,color=mark_col,fontsize=20)
-    grid[ii].text(-0.4,0.4,quasar,color=mark_col,fontsize=20)
+    #grid[ii].text(0.25,-0.52,mark,color=mark_col,fontsize=20)
+    #grid[ii].text(-0.4,0.4,quasar,color=mark_col,fontsize=20)
     
     ticks = mag_to_flux(_coltix, zp=_mag_zp, scale=pxscale)
     cbar = pp.colorbar(im, cax=grid.cbar_axes[0], ticks=ticks)
@@ -155,14 +156,14 @@ if __name__ == '__main__':
         #ax.yaxis.set_major_formatter(xy_format)
     pp.subplots_adjust(left=0.08, bottom=0.1, right=0.91, top=0.92)
 
-    grid1[0].set_title('PSF-Subtracted',fontsize=9)
-    grid2[0].set_title('PSF-Subtracted',fontsize=9)
-    grid3[0].set_title('PSF-Subtracted',fontsize=9)
-    grid1[1].set_title('True Host',fontsize=9)
-    grid2[1].set_title('True Host',fontsize=9)
-    grid3[1].set_title('True Host',fontsize=9)
+    grid1[0].set_title('Fixed AGN',fontsize=9)
+    grid2[0].set_title('Fixed AGN',fontsize=9)
+    grid3[0].set_title('Fixed AGN',fontsize=9)
+    grid1[1].set_title('Moving AGN',fontsize=9)
+    grid2[1].set_title('Moving AGN',fontsize=9)
+    grid3[1].set_title('Moving AGN',fontsize=9)
 
-    pp.savefig('SDSS_z7_trueVsResiduals_appendix.pdf')
+    #pp.savefig('SDSS_z7_trueVsResiduals_appendix.pdf')
     #pp.savefig('SDSS_z7_trueVsResiduals_appendix_nonSmooth.pdf')
     pp.show() 
     pp.close(fig)

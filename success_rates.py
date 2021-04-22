@@ -74,13 +74,23 @@ def plot_images(BH,dust_atten,ax):
   data = SynthObs.bluetides_data('PIG_208/processed_data/'+str(BH))
   quasar_spectra, q_lambda = load_quasar(folder+str(BH)+'/run_cloudy.con')#,axes[jj,ii%cols])
   gal_spectra_int, gal_spectra_tot, g_lambda = load_host(data)
+    
+  qs = (quasar_spectra)+np.log10(dust_atten)
+  gs = gal_spectra_tot
+  cut_q=(qs>0)
+  cut_g=(gs>0)
+  qs=qs[cut_q]
+  gs=gs[cut_g]
   
-  ax.plot(q_lambda,quasar_spectra+np.log10(dust_atten),label='Quasar',c='k',lw=1.5,zorder=100)
+  
+  ax.plot(q_lambda[cut_q]*(1+z),qs,label='Quasar',c='k',lw=1.5,zorder=100)
+  #ax.plot(q_liambda,quasar_spectra+np.log10(dust_atten),label='Quasar',c='k',lw=1.5,zorder=100)
   #ax[0].fill_between(q_lambda,quasar_spectra,quasar_spectra+np.log10(dust_atten[0]),color='k',alpha=0.15)
 
-  ax.plot(g_lambda,gal_spectra_tot,label='Host Galaxy',c='turquoise',lw=1.5,zorder=80)
+  #ax.plot(g_lambda,gal_spectra_tot,label='Host Galaxy',c='turquoise',lw=1.5,zorder=80)
+  ax.plot(g_lambda[cut_g]*(1+z),gs,label='Host Galaxy',c='turquoise',lw=1.5,zorder=80)
   #ax[0].fill_between(g_lambda,gal_spectra_tot,gal_spectra_int,color='turquoise',alpha=0.15)
-  ax.set_xlabel(r'$\log_{10}(\lambda_{\rm{obs}}/\mu m)$')
+  ax.set_xlabel(r'$(\lambda_{\rm{obs}}/\mu m)$')
   return
 
 
@@ -101,10 +111,23 @@ model.dust = {'A': 4.6, 'slope': -1.0} # DEFINE DUST MODEL - these are the calib
 fesc = 0.9
 filters = ['FAKE.FAKE.'+f for f in ['1500','2500','V']] # --- define the filters. FAKE.FAKE are just top-hat filters using for extracting rest-frame quantities.
 cosmo = FLARE.default_cosmo()
-z = 7.3
+z = 7
 
 F = FLARE.filters.add_filters(filters, new_lam = model.lam) 
 
+##Plot galaxy and AGN spectra
+"""
+fig,ax=plt.subplots()
+cols=1
+plot_images(BHsamples,dust_atten,ax)
+
+
+ax.set_ylabel(r'$\log_{10}(L_{\nu}/{\rm{erg\ s}}^{-1}\ \rm{Hz}^{-1})$')
+ax.set_ylim([29,32.2])
+ax.set_xlim(0.5,8)
+ax.legend(fontsize='small',loc=(0.3,-0.27),ncol=4)
+plt.show()
+"""
 
 with open('wavelength.pkl', 'rb') as f:
         wavelength=pickle.load(f)
@@ -114,47 +137,51 @@ with open('detect_rate.pkl', 'rb') as f:
 
 #Plot success rates
 #fig,ax = plt.subplots(2,1,figsize=(4,4),gridspec_kw={'bottom':0.15,'left':0.15,'right':0.95,'top':0.95,'height_ratios':[2,1]},sharex=True)
-fig,ax = plt.subplots(figsize=(4,4),gridspec_kw={'bottom':0.35,'left':0.15,'right':0.95,'top':0.90})
+fig,ax = plt.subplots(2,1,figsize=(4,4.6),gridspec_kw={'bottom':0.24,'left':0.15,'right':0.95,'top':0.90,'height_ratios':[3,1],'hspace':0},sharex=True)
   
-ax.plot(wavelength['1 ks'],detect_rate['1 ks'],'o',color=colors[4],label='1 ks')#,markerfacecolor='w',markeredgewidth=2.1)
-ax.plot(2.0,detect_rate['2.5 ks'],'o',color=colors[3],label='2.5 ks')#,markerfacecolor='w',markeredgewidth=2.1)
-ax.plot(wavelength['5 ks'],detect_rate['5 ks'],'o',color=colors[2],label='5 ks')#,markerfacecolor='None',markeredgewidth=2.1)
+ax[0].plot(wavelength['1 ks'],detect_rate['1 ks'],'o',color=colors[4],label='1 ks')#,markerfacecolor='w',markeredgewidth=2.1)
+ax[0].plot(2.0,detect_rate['2.5 ks'],'o',color=colors[3],label='2.5 ks')#,markerfacecolor='w',markeredgewidth=2.1)
+ax[0].plot(wavelength['5 ks'],detect_rate['5 ks'],'o',color=colors[2],label='5 ks')#,markerfacecolor='None',markeredgewidth=2.1)
 
 for filt in ['F115W','F150W','F277W','F356W','F444W']:
-    ax.plot(wavelength[filt],detect_rate[filt],'o',color=colors[1],label='__nolabel__')#filt)
-    ax.plot(wavelength[filt],detect_rate[filt+' 5 ks'],'o',color=colors[2],label='__nolabel__')#,markerfacecolor='None',markeredgewidth=2.1)#filt)
+    ax[0].plot(wavelength[filt],detect_rate[filt],'o',color=colors[1],label='__nolabel__')#filt)
+    ax[0].plot(wavelength[filt],detect_rate[filt+' 5 ks'],'o',color=colors[2],label='__nolabel__')#,markerfacecolor='None',markeredgewidth=2.1)#filt)
 for filt in ['F356W']:
-    ax.plot(wavelength[filt],detect_rate[filt],'o',color=colors[1],label='__nolabel__')#filt)
-    ax.plot(wavelength[filt],detect_rate[filt+' 5 ks'],'o',color=colors[2],label='__nolabel__',markerfacecolor='None',markeredgewidth=2.1)#filt)
-ax.plot(wavelength['F200W'],detect_rate['F200W'],'o',color=colors[1],label='10 ks')
-ax.plot(wavelength['F560W'],detect_rate['F560W'],'^',color=colors[1],label='10 ks (MIRI)')
-ax.plot(wavelength['F770W'],detect_rate['F770W'],'^',color=colors[1],label='__nolabel__')
+    ax[0].plot(wavelength[filt],detect_rate[filt],'o',color=colors[1],label='__nolabel__')#filt)
+    ax[0].plot(wavelength[filt],detect_rate[filt+' 5 ks'],'o',color=colors[2],label='__nolabel__',markerfacecolor='None',markeredgewidth=2.1)#filt)
+ax[0].plot(wavelength['F200W'],detect_rate['F200W'],'o',color=colors[1],label='10 ks')
+ax[0].plot(wavelength['F560W'],detect_rate['F560W'],'^',color=colors[1],label='10 ks (MIRI)')
+ax[0].plot(wavelength['F770W'],detect_rate['F770W'],'^',color=colors[1],label='__nolabel__')
   
-ax.plot(wavelength['F150W 4800s'],detect_rate['F150W 4800s'],'o',color=colors[0],label='4.8 ks')
-ax.plot(wavelength['HST'],detect_rate['HST'],'s',color=colors[0],label='4.8 ks (HST)')
+ax[0].plot(wavelength['F150W 4800s'],detect_rate['F150W 4800s'],'o',color=colors[0],label='4.8 ks')
+ax[0].plot(wavelength['HST'],detect_rate['HST'],'s',color=colors[0],label='4.8 ks (HST)')
 
   
-plt.legend(fontsize='small',loc=(0.18,-0.6),ncol=2)
-ax.set_xlabel(r'Observed Wavelength ($\mu$m)')
-ax.set_ylabel('Fraction of Successful Detections')
-ax.set_xlim([0.9,8])
+ax[0].legend(fontsize='small',loc=(0,-0.81),ncol=3) #-0.6
+#ax[0].set_xlabel(r'Observed Wavelength ($\mu$m)')
+ax[0].set_ylabel('Fraction of Successful Detections')
+ax[0].yaxis.set_label_coords(-0.121,0.5)
+ax[0].set_xlim([0.9,8])
 
-ax2=ax.twiny()
+ax2=ax[0].twiny()
 wave=[2000,4000,6000,8000] 
 ax2.set_xticks(np.array(wave)/10000*8)
 ax2.set_xticklabels(wave)
-ax2.set_xlim(ax.get_xlim())
+ax2.set_xlim(ax[0].get_xlim())
 ax2.set_xlabel(r'Rest-Frame Wavelength ($\AA$)')
-plt.savefig('success_rates.pdf')
+
+
+wavelengths=[1.15,1.50,2.00,2.77,3.56,4.44,5.60,7.70]
+flux_ratio=np.load('flux_ratio.npy')
+
+ax[1].plot(wavelengths,(np.median(1/flux_ratio,axis=1)),'kp',markersize=4)
+ax[1].set_ylabel(r'$L_{\rm{AGN}}/L_{\rm{Host}}$')
+ax[1].yaxis.set_label_coords(-0.121,0.5)
+#ax[1].set_ylim([0.03,0.017])
+ax[1].set_ylim([33,57])
+ax[1].set_xlabel(r'Observed Wavelength ($\mu$m)')
+
+plt.savefig('success_rates_with_ratio.pdf')
   #plt.tight_layout()
 
-"""cols=1
-
-
-plot_images(BHsamples,dust_atten,ax[1])
-
-
-ax[1].set_ylabel(r'$\log_{10}(L_{\nu}/{\rm{erg\ s}}^{-1}\ \rm{Hz}^{-1})$')
-ax[1].set_ylim([28,32.2])
-ax[1].legend(fontsize='small',loc=(0.3,-0.27),ncol=4)"""
 plt.show()
