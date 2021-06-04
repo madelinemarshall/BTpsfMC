@@ -1,5 +1,6 @@
 from __future__ import division
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as pp
 import pyregion
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -12,6 +13,7 @@ from astropy.visualization import AsinhStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from matplotlib import rc
 rc('font', family='serif')
+matplotlib.rcParams['font.size'] = (8)
 
 _stamp_pat = 'data/sci_mock_{}_onlyHost.fits'
 _psfresid_pat_sm = 'runJWST/SDSS_z7_smooth/mcmc_out_mock_{}_point_source_subtracted.fits'
@@ -63,9 +65,9 @@ def plot_models(quasar, save_name=None):
     grid.cbar_axes[0].set_ylabel('mag arcsec$^{-2}$')
     grid.cbar_axes[0].set_xlabel('mag arcsec$^{-2}$')
 
-    grid[0].set_title('True Host',fontsize=10)
-    grid[1].set_title('Smooth PSF Subtraction',fontsize=10)
-    grid[2].set_title('Star PSF Subtraction',fontsize=10)
+    grid[0].set_title('True Host')#,fontsize=10)
+    grid[1].set_title('Smooth\nPSF Subtraction')#,fontsize=10)
+    grid[2].set_title('Star\nPSF Subtraction')#,fontsize=10)
     #grid[ii].set_title(quasar)
 
 if __name__ == '__main__':
@@ -76,7 +78,7 @@ if __name__ == '__main__':
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(6.5, 2.5))
+    fig = pp.figure(figsize=(4.5, 1.8))
     grid = ImageGrid(fig, 111, nrows_ncols=(1, 3), axes_pad=0.1,
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='single')

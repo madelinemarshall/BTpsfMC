@@ -8,6 +8,7 @@ from matplotlib.transforms import Affine2D
 from astropy.io import fits
 from astropy.wcs import WCS
 from scipy.ndimage import gaussian_filter
+import pandas as pd
 
 from astropy.visualization import AsinhStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
@@ -16,13 +17,15 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
 
 rc('font', family='serif')
-matplotlib.rcParams['font.size'] = (9)
+matplotlib.rcParams['font.size'] = (8)
 
 _true_pat = 'data/sci_mock_JWST_{}_{}_onlyHost.fits'
-_psfresid_pat = 'runJWST/SDSS_z7_SN/mcmc_out_mock_JWST_{}_point_source_subtracted.fits'
 _mag_zp = 25.9463
 
 _stretch = AsinhStretch()
+#LW stretch
+#_stretch.a = (0.05 - 0.0001)/2 / (0.05+0.0001)
+#_pnorm = ImageNormalize(vmin=-0.0001, vmax=0.05, stretch=_stretch, clip=True)
 _stretch.a = (0.01 - 0.0001)/2 / (0.01+0.0001)
 _pnorm = ImageNormalize(vmin=-0.0001, vmax=0.01, stretch=_stretch, clip=True)
 _axis_range = [-0.6,0.6,-0.6,0.6]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
@@ -38,7 +41,12 @@ def mag_to_flux(mag, zp=0.0, scale=(1.0, 1.0)):
 
 
 def plot_models(quasar,filt):
-    psfresid = fits.getdata(_psfresid_pat.format(quasar))
+    if filt =='F200W':
+      _psfresid_pat = 'runJWST/SDSS_z7_SN/mcmc_out_mock_JWST_{}_point_source_subtracted.fits'
+      psfresid = fits.getdata(_psfresid_pat.format(quasar))
+    else:
+      _psfresid_pat = 'runJWST/SDSS_z7_{}/mcmc_out_mock_JWST_{}_point_source_subtracted.fits'
+      psfresid = fits.getdata(_psfresid_pat.format(filt,quasar))
     #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
     resid_smooth = gaussian_filter(psfresid, (1, 1))
     #resid_smooth = psfresid
@@ -62,16 +70,8 @@ def plot_models(quasar,filt):
     im = grid[ii+1].imshow(true_smooth, extent=extents, origin='lower',
                                cmap=gray_r, norm=_pnorm,
                                interpolation='nearest')
-    if int(quasar.split('_')[-1]) in undetectable:
-      mark=r'$\times$'
-      mark_col='red'
-    else:
-      mark=r'$\checkmark$'
-      mark_col='limegreen'
-    grid[ii].axis(_axis_range)
-    grid[ii].text(0.25,-0.52,mark,color=mark_col,fontsize=20)
-    grid[ii].text(-0.4,0.4,quasar,color=mark_col,fontsize=20)
     
+    grid[ii].axis(_axis_range)
     ticks = mag_to_flux(_coltix, zp=_mag_zp, scale=pxscale)
     cbar = pp.colorbar(im, cax=grid.cbar_axes[0], ticks=ticks)
     cbar.set_ticklabels(_coltix)
@@ -83,17 +83,30 @@ def plot_models(quasar,filt):
 
 if __name__ == '__main__':
     from sys import argv
+ 
+    if len(argv)>1:
+      filt=str(argv[1])
+    else:
+      filt='F200W'
+
+
     # import glob
     to_plot = [2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  20,  22,  23,  25,  27,  32,  36,  40,  43,  45,  46, 100]
     detectable = [2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  22,  25,  27,  32,  36,  40,  43,  45, 100] #detectable
     #undetectable = [20, 23, 46] #undetectable in F200W
     undetectable = [2,8,20,23,46,100] #undectable in >2 filters
     
-
+    df=pd.read_pickle('/home/mmarshal/BLUETIDES/BlueTides/PIG_208/processed_data/quasarDatabase_processed.pkl')
+    df=df[df['Sample']=='SDSS']
+    
+    success=np.where(df[filt])[0]
+    #print(df[filt])
+    print(success)
+ 
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(8.4, 9.8))
+    fig = pp.figure(figsize=(6.8, 8))
     #grid = ImageGrid(fig, 111, nrows_ncols=(4, int(np.ceil(len(to_plot)/4))), axes_pad=0.1,
     #                 share_all=True, label_mode='L',
     #
@@ -107,11 +120,6 @@ if __name__ == '__main__':
     grid3 = ImageGrid(fig, (0.63, 0.164, 0.3, 0.786), nrows_ncols=(int(np.ceil(len(to_plot)/3))-1, 2), axes_pad=[0.1,0.1],
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='single',cbar_pad=0.1,cbar_size=0.1)
- 
-    if len(argv)>1:
-      filt=str(argv[1])
-    else:
-      filt='F200W'
 
     ii=0
     col1=-2
@@ -132,6 +140,21 @@ if __name__ == '__main__':
           grid=grid3
         quasar = 'SDSS_' + str(quasar)
         plot_models(quasar,filt)
+
+        if jj in success:
+          mark=r'$\checkmark$'
+          mark_col='limegreen'
+        else:
+          mark=r'$\times$'
+          mark_col='red'
+        grid[ii].text(0.25,-0.52,mark,color=mark_col,fontsize=20)
+        #grid[ii].text(-0.4,0.4,quasar,color=mark_col)#,fontsize=10)
+      
+    
+    #if int(quasar.split('_')[-1]) in undetectable:
+    #  mark=r'$\times$'
+    #  mark_col='red'
+    #else:
    
     xy_format = pp.FormatStrFormatter(r'$%0.1f^{\prime\prime}$')
     for ax in grid1:
@@ -155,14 +178,17 @@ if __name__ == '__main__':
         #ax.yaxis.set_major_formatter(xy_format)
     pp.subplots_adjust(left=0.08, bottom=0.1, right=0.91, top=0.92)
 
-    grid1[0].set_title('PSF-Subtracted',fontsize=9)
-    grid2[0].set_title('PSF-Subtracted',fontsize=9)
-    grid3[0].set_title('PSF-Subtracted',fontsize=9)
-    grid1[1].set_title('True Host',fontsize=9)
-    grid2[1].set_title('True Host',fontsize=9)
-    grid3[1].set_title('True Host',fontsize=9)
+    grid1[0].set_title('PSF-Subtracted')#,fontsize=9)
+    grid2[0].set_title('PSF-Subtracted')#,fontsize=9)
+    grid3[0].set_title('PSF-Subtracted')#,fontsize=9)
+    grid1[1].set_title('True Host')#,fontsize=9)
+    grid2[1].set_title('True Host')#,fontsize=9)
+    grid3[1].set_title('True Host')#,fontsize=9)
 
-    pp.savefig('SDSS_z7_trueVsResiduals_appendix.pdf')
+    if filt=='F200W':
+      pp.savefig('SDSS_z7_trueVsResiduals_appendix.pdf')
+    else:
+      pp.savefig('SDSS_z7_trueVsResiduals_appendix_{}.pdf'.format(filt))
     #pp.savefig('SDSS_z7_trueVsResiduals_appendix_nonSmooth.pdf')
     pp.show() 
     pp.close(fig)

@@ -8,7 +8,7 @@ import sys
 import pandas as pd
 import calculate_BIC
 import matplotlib
-matplotlib.rcParams['font.size'] = (9)
+matplotlib.rcParams['font.size'] = (8)
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
@@ -45,8 +45,9 @@ def hist_x(data,mask,ax,color='#d6f1ff'):
     ax.bar(bins_min+bins_width*(0.5+np.arange(0,nbins)),height=frac,width=bins_width,edgecolor='k',facecolor=color,yerr=[err,err_up],capsize=3,ecolor=[0.5,0.5,0.5])#[0.8,0.8,0.8])
     #ax.plot(bins_min+bins_width*(1/2+np.arange(0,6)),frac,'ro',zorder=99)#, linewidth=1.2,marker='o',**kwargs)
     #ax.set_xlim(bins_min-0.05,bins_max+0.05)
-    #ax.set_ylim(-0.05,1.171)
+    ax.set_ylim(-0.05,1.14)
     ax.set_yticks([0,1])
+    ax.set_yticklabels(['0',''])
     ax.tick_params(axis='both', direction='in')
     return
 
@@ -84,6 +85,7 @@ def hist_y(data,mask,ax,color='#d6f1ff'):
     #ax.plot(frac,bins_min+bins_width*(1/2+np.arange(0,6)),'ro',zorder=99)#, linewidth=1.2,marker='o',**kwargs)
     #ax.set_ylim(bins_min-0.05,bins_max+0.05)
     #ax.set_xlim(-0.05,1.14)
+    ax.set_xlim(-0.05,1.14)
     ax.set_xticks([0,1])
     ax.tick_params(axis='both', direction='in')
     return
@@ -212,7 +214,7 @@ if __name__=='__main__':
 
     if True:#BHAR,Eddington ratio
     
-      fig,ax=plt.subplots(3,2,figsize=(4,6.4),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,0.3],'hspace':0,'wspace':0,'bottom':0.06,'left':0.2,'right':0.95,'top':0.98})   
+      fig,ax=plt.subplots(3,2,figsize=(3.4,5.4),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,0.3],'hspace':0,'wspace':0,'bottom':0.06,'left':0.2,'right':0.95,'top':0.98})   
     
       xdata1=np.log10(df1['BHMass'])
       ydata1=np.array(BHAR_S)
@@ -237,7 +239,7 @@ if __name__=='__main__':
       plt.show()
     
     
-    fig,ax=plt.subplots(2,2,figsize=(4,3.3),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.1,'left':0.2,'right':0.95,'top':0.95})   
+    fig,ax=plt.subplots(2,2,figsize=(3.4,2.8),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.1,'left':0.2,'right':0.95,'top':0.95})   
 
 
     xdata1=df2['MUV_AGN_dust']-1.086*df2['tau_UV_AGN']
@@ -251,7 +253,7 @@ if __name__=='__main__':
    
  
     
-    fig,ax=plt.subplots(2,2,figsize=(4,3.9),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.23,'left':0.2,'right':0.95,'top':0.95})   
+    fig,ax=plt.subplots(2,2,figsize=(3.2,3.2),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.23,'left':0.2,'right':0.95,'top':0.95})   
  
     xdata1=df2['MUV_AGN_dust']
     ydata1=df2['MUV_gal_dust']
@@ -262,7 +264,7 @@ if __name__=='__main__':
     ax[1,1].set_xlabel(r'$M_{\rm{UV,AGN}}$')
     ax[0,0].set_ylabel(r'$M_{\rm{UV,Host}}$')
     ax[0,0].set_xlabel('Success\nRate')
-    ax[0,1].legend(fontsize='small',ncol=2,loc=(-0.27,-0.65))
+    ax[0,1].legend(fontsize='small',ncol=2,loc=(-0.45,-0.67))
     ax[0,0].invert_yaxis()
     ax[1,1].invert_xaxis()
     ax[0,1].invert_yaxis()

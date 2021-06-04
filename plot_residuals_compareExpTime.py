@@ -12,20 +12,22 @@ from astropy.visualization import AsinhStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from matplotlib import rc
 rc('font', family='serif')
+rc('font',size = (8))
 
 _stamp_pat = 'data/sci_mock_{}_onlyHost_{}00s.fits'
 _psfresid_pat = 'runJWST/SDSS_z7_{}00s/mcmc_out_mock_{}_point_source_subtracted.fits'
 _stamp_pat_10 = 'data/sci_mock_{}_onlyHost.fits'
 _psfresid_pat_10 = 'runJWST/SDSS_z7_SN/mcmc_out_mock_{}_point_source_subtracted.fits'
+_quasar_pat = 'data/sci_mock_{}_host_SN.fits'
 _mag_zp = 25.9463
 
 _stretch = AsinhStretch()
-_stretch.a = (0.01 - 0.0001)/2 / (0.01+0.0001)
-_pnorm = ImageNormalize(vmin=-0.0001, vmax=0.01, stretch=_stretch, clip=True)
+_stretch.a = (0.02 - 0.0001)/2 / (0.02+0.0001)
+_pnorm = ImageNormalize(vmin=-0.0001, vmax=0.02, stretch=_stretch, clip=True)
 _axis_range = [-0.6,0.6,-0.6,0.6]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
 #_xytix = [-3,-2, -1, 0, 1, 2,3]  # in arcsec
 _xytix = [-0.5, 0, 0.5]  # in arcsec
-_coltix = np.array([27,28,29])  # in mag/arcsec**2
+_coltix = np.array([26,27,28])  # in mag/arcsec**2
 
 gray_r = pp.cm.cmap_d['Spectral_r']#'nipy_spectral']
 
@@ -35,18 +37,37 @@ def mag_to_flux(mag, zp=0.0, scale=(1.0, 1.0)):
 
 
 def plot_models(quasar, ii, save_name=None):
-    jj=ii*4
+    jj=ii*5
+    #Original image before PSF-subtraction
+    qdir = 'JWST_F200W_'+quasar.split('_',1)[1]
+    original = fits.getdata(_quasar_pat.format(qdir))
+    
+    original_smooth = gaussian_filter(original, (1, 1))
+    center = np.array(original.shape)[::-1]/2
+    pxscale = 0.031/2 #arcsec
+    extents = np.array([-center[0], center[0],
+               -center[1], center[1]])*pxscale
+
+    im = grid[jj].imshow(original_smooth, extent=extents, origin='lower',
+                               cmap=gray_r, norm=_pnorm,
+                               interpolation='nearest')
+    grid[jj].axis(_axis_range)
+  
+    ticks = mag_to_flux(_coltix, zp=_mag_zp, scale=pxscale)
+    cbar = pp.colorbar(im, cax=grid.cbar_axes[0], ticks=ticks)
+    cbar.set_ticklabels(_coltix)
+    grid.cbar_axes[0].set_ylabel('mag arcsec$^{-2}$')
+    grid.cbar_axes[0].set_xlabel('mag arcsec$^{-2}$')
+    jj+=1
+    
+
+
     for expTime in [10,25,50]:
       psfresid = fits.getdata(_psfresid_pat.format(expTime,quasar))
       psfresid_smooth = gaussian_filter(psfresid, (1, 1))
       qdir = 'JWST_F200W_'+quasar.split('_',1)[1]
       #stamp = fits.getdata(_stamp_pat.format(qdir,expTime))
       #stamp_smooth = gaussian_filter(stamp, (2, 2))
-
-      center = np.array(psfresid.shape)[::-1]/2
-      pxscale = 0.031/2 #arcsec
-      extents = np.array([-center[0], center[0],
-               -center[1], center[1]])*pxscale
 
       #plot_panels = [psfresid, 'Point Source\nSubtracted']
       plot_panels = [psfresid_smooth, 'Point Source\nSubtracted']
@@ -74,7 +95,6 @@ def plot_models(quasar, ii, save_name=None):
     ###True Host
     #psfresid = fits.getdata(_psfresid_pat_10.format(quasar))
     #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
-    qdir = 'JWST_F200W_'+quasar.split('_',1)[1]
     stamp = fits.getdata(_stamp_pat_10.format(qdir))
     stamp_smooth = gaussian_filter(stamp, (1, 1))
 
@@ -91,22 +111,22 @@ def plot_models(quasar, ii, save_name=None):
     cbar.set_ticklabels(_coltix)
     grid.cbar_axes[0].set_ylabel('mag arcsec$^{-2}$')
     grid.cbar_axes[0].set_xlabel('mag arcsec$^{-2}$')
-    
-    
+  
     mark=r'$\times$'
     mark_col='red'
-    grid[0].text(0.35,-0.55,mark,color=mark_col,fontsize=22)
+    grid[1].text(0.25,-0.55,mark,color=mark_col,fontsize=22)
     mark=r'$\checkmark$'
     mark_col='limegreen'
-    for ii in range(1,4):
-      grid[ii].text(0.35,-0.55,mark,color=mark_col,fontsize=22)
+    for ii in range(2,5):
+      grid[ii].text(0.25,-0.55,mark,color=mark_col,fontsize=22)
  
 
-    grid[0].set_title('1 ks',fontsize=10)
-    grid[1].set_title('2.5 ks',fontsize=10)
-    grid[2].set_title('5 ks',fontsize=10)
-    grid[3].set_title('10 ks',fontsize=10)
-    grid[4].set_title('True Image (10 ks)',fontsize=10)
+    grid[1].set_title('1 ks')#fontsize=10)
+    grid[2].set_title('2.5 ks')#,fontsize=10)
+    grid[3].set_title('5 ks')#,fontsize=10)
+    grid[4].set_title('10 ks')#,fontsize=10)
+    grid[5].set_title('True Image\n(10 ks)')#,fontsize=10)
+    grid[0].set_title('Quasar (10 ks)')#,fontsize=10)
     #grid[ii].set_title(quasar)
 
 if __name__ == '__main__':
@@ -117,8 +137,8 @@ if __name__ == '__main__':
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(10, 2.6))
-    grid = ImageGrid(fig, 111, nrows_ncols=(len(to_plot), 5), axes_pad=0.1,
+    fig = pp.figure(figsize=(6.8, 1.6))
+    grid = ImageGrid(fig, 111, nrows_ncols=(len(to_plot), 6), axes_pad=0.1,
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='single')
    
@@ -135,7 +155,7 @@ if __name__ == '__main__':
         ax.set_yticks(_xytix)
         ax.xaxis.set_major_formatter(xy_format)
         ax.yaxis.set_major_formatter(xy_format)
-    pp.subplots_adjust(left=0.06, bottom=0.06, right=0.9, top=0.94)
+    pp.subplots_adjust(left=0.06, bottom=0.06, right=0.93, top=0.94)
     pp.savefig('residual_compare_expTime.pdf')
     pp.show() 
     pp.close(fig)

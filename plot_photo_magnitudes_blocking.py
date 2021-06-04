@@ -20,9 +20,14 @@ plt.rc('font', family='serif')
 markers= ['s','^','o','d','h','p']
 _stretch = AsinhStretch()
 _stretch.a = (0.01 - 0.0001)/2 / (0.01+0.0001)
+_mag_zp = 25.9463
+_coltix = np.array([27,28,29])  # in mag/arcsec**2
 
 def flux_to_mag(flux):
     return -2.5*np.log10(flux/(3631e9)) #flux in nJy
+
+def mag_to_flux(mag, zp=0.0, scale=(1.0, 1.0)):
+    return 10**(-0.4*(mag - zp)) * np.prod(scale)
 
 def full_mag(counts):
     return -2.5*np.log10(np.sum(counts))+25.9463
@@ -43,11 +48,11 @@ def plot_true(counts,ax):
     #plt.colorbar(im)
 
 
-    circle2=plt.Circle(cent,ap, fill=False,color='k',linestyle='--')
-    ax.add_artist(circle2)
+    #circle2=plt.Circle(cent,ap, fill=False,color='k',linestyle='--')
+    #ax.add_artist(circle2)
 
 
-    circle2=plt.Circle(crop_offset,crop_rad*pxscale, fill=False,color='k',linestyle='--')
+    circle2=plt.Circle(crop_offset,crop_rad*pxscale, fill=False,color='k',lw=0.5)
     ax.add_artist(circle2)
 
     mag_true=ap_phot(counts,ax=False,kernel=False,mask=False,plot=False)
@@ -69,15 +74,15 @@ def plot_orig(orig_counts,ax_orig):
                                interpolation='nearest')
       ax_orig.axis([-0.6,0.6,-0.6,0.6])
 
-      circle2=plt.Circle(cent,ap, fill=False,color='k',linestyle='--')
-      ax_orig.add_artist(circle2)
+      #circle2=plt.Circle(cent,ap, fill=False,color='k',linestyle='--')
+      #ax_orig.add_artist(circle2)
 
 
-      circle2=plt.Circle(crop_offset,crop_rad*pxscale, fill=False,color='k',linestyle='--')
+      circle2=plt.Circle(crop_offset,crop_rad*pxscale, fill=False,color='k',lw=0.5)
       ax_orig.add_artist(circle2)
 
       mag_orig=ap_phot(orig_counts,ax=False,kernel=False,mask=False,plot=False)
-      ax_orig.text(-0.38,-0.5,r'$m={}$'.format(np.round(mag_orig,2)),color='w')
+      ax_orig.text(-0.38,-0.5,r'$m={:.2f}$'.format(mag_orig),color='w')
       return mag_orig
 
 
@@ -149,16 +154,21 @@ def ap_phot(counts,ax,kernel=False,mask=True,plot=True,level=False):
                                interpolation='nearest')
       ax.axis([-0.6,0.6,-0.6,0.6])
       #norm=_pnorm)#SymLogNorm(1e-1,vmin=np.amin(counts),vmax=np.amax(counts)),cmap='Spectral_r')#norm=SymLogNorm(0.01,vmin=-0.2,vmax=0.2))#cmap='inferno',vmin=0,vmax=0.02)
-      cbar = plt.colorbar(im, cax=grid.cbar_axes[0])
 
-      ax.text(-0.38,-0.5,r'$m={}$'.format(np.round(mag,2)),color='w')
+      ax.text(-0.38,-0.5,r'$m={0:.2f}$'.format(mag),color='w')
+
+      if ii==0:
+        cbar = plt.colorbar(im, cax=grid.cbar_axes[0])
+    
+        ticks = mag_to_flux(_coltix, zp=_mag_zp, scale=pxscale)
+        cbar = plt.colorbar(im, cax=grid.cbar_axes[0], ticks=ticks)
+        cbar.set_ticklabels(_coltix)
+
+      #circle2=plt.Circle(cent,ap, fill=False,color='k',linestyle='--')
+      #ax.add_artist(circle2)
 
 
-      circle2=plt.Circle(cent,ap, fill=False,color='k',linestyle='--')
-      ax.add_artist(circle2)
-
-
-      circle2=plt.Circle(crop_offset,crop_rad*pxscale, fill=False,color='k',linestyle='--')
+      circle2=plt.Circle(crop_offset,crop_rad*pxscale, fill=False,color='k',lw=0.5)
       ax.add_artist(circle2)
       #circle2=plt.Circle((0,0),2*FWHM/2, fill=False,color='k',linestyle='--')
       #ax.add_artist(circle2)
@@ -177,7 +187,7 @@ def ap_phot(counts,ax,kernel=False,mask=True,plot=True,level=False):
 
 
 if __name__=='__main__':
-  indices=np.array([3,6,7,9,10])#2,3,6,7,8,9,10,12,16,18,20,22,23,25,27,32,36,40,41,43,45,46,100])
+  indices=np.array([3,6,7,27])#2,3,6,7,8,9,10,12,16,18,20,22,23,25,27,32,36,40,41,43,45,46,100])
 
   filt_no={'F115W':0,'F150W':1,'F200W':2,'F277W':3,'F356W':4,'F444W':5,'F560W':6,'F770W':7}
   wavelength={'F115W':1.15,'F150W':1.50,'F200W':2.00,'F277W':2.77,'F356W':3.56,'F444W':4.44}
@@ -202,8 +212,8 @@ if __name__=='__main__':
     print(crop_rad)
     _pnorm = ImageNormalize(vmin=-0.000005, vmax=0.01, stretch=_stretch, clip=True)#-0.000005, vmax=0.01
 
-    fig=plt.figure(figsize=(6,7))
-    grid = ImageGrid(fig, 111, nrows_ncols=(5, 4), axes_pad=0.1,
+    fig=plt.figure(figsize=(6,len(indices)+1))
+    grid = ImageGrid(fig, 111, nrows_ncols=(len(indices), 4), axes_pad=0.1,
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='single')
 
@@ -257,6 +267,18 @@ if __name__=='__main__':
   plt.ylim(23.5,26.2)
   #plt.axis('square')
   """
+  xy_format = plt.FormatStrFormatter(r'$%0.1f^{\prime\prime}$')
+  for ii,ax in enumerate(grid):
+        #ax.set_yticks(_xytix)
+        #ax.set_yticklabels(['','',''])
+        #ax.set_xticks(_xytix)
+        #ax.set_xticklabels(_xytix)
+        ax.xaxis.set_major_formatter(xy_format)
+        ax.yaxis.set_major_formatter(xy_format)
+     
+  grid.cbar_axes[0].set_ylabel('mag arcsec$^{-2}$')
+  grid.cbar_axes[0].yaxis.set_label_coords(2.3,0.5)
   
+  plt.savefig('residuals_masking.pdf')
   plt.show()
 

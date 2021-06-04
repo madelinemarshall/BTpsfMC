@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 import os
+import matplotlib
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import SynthObs
 from SynthObs.SED import models
@@ -12,9 +13,10 @@ from synphot import etau_madau
 import matplotlib
 import pickle
 #matplotlib.rcParams['font.size'] = (9)
-matplotlib.rcParams['figure.figsize'] = (7.2,3.2)
+matplotlib.rcParams['figure.figsize'] = (3.4,6)
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
+matplotlib.rcParams['font.size'] = (8)
 colors         = ['#96dbff',\
                   '#984ea3',\
                   '#fc4c4c',\
@@ -108,7 +110,7 @@ dust_atten=np.exp(-np.array(tau_UV))#Need metallicity factor
 #Setup
 model = models.define_model('BPASSv2.2.1.binary/ModSalpeter_300') # DEFINE SED GRID - 
 model.dust = {'A': 4.6, 'slope': -1.0} # DEFINE DUST MODEL - these are the calibrated z=8 values for the dust model
-fesc = 0.9
+fesc = 0
 filters = ['FAKE.FAKE.'+f for f in ['1500','2500','V']] # --- define the filters. FAKE.FAKE are just top-hat filters using for extracting rest-frame quantities.
 cosmo = FLARE.default_cosmo()
 z = 7
@@ -137,7 +139,7 @@ with open('detect_rate.pkl', 'rb') as f:
 
 #Plot success rates
 #fig,ax = plt.subplots(2,1,figsize=(4,4),gridspec_kw={'bottom':0.15,'left':0.15,'right':0.95,'top':0.95,'height_ratios':[2,1]},sharex=True)
-fig,ax = plt.subplots(2,1,figsize=(4,4.6),gridspec_kw={'bottom':0.24,'left':0.15,'right':0.95,'top':0.90,'height_ratios':[3,1],'hspace':0},sharex=True)
+fig,ax = plt.subplots(2,1,figsize=(3.4,4),gridspec_kw={'bottom':0.2,'left':0.15,'right':0.95,'top':0.90,'height_ratios':[3,1],'hspace':0},sharex=True)
   
 ax[0].plot(wavelength['1 ks'],detect_rate['1 ks'],'o',color=colors[4],label='1 ks')#,markerfacecolor='w',markeredgewidth=2.1)
 ax[0].plot(2.0,detect_rate['2.5 ks'],'o',color=colors[3],label='2.5 ks')#,markerfacecolor='w',markeredgewidth=2.1)

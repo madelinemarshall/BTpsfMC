@@ -12,18 +12,19 @@ from astropy.visualization import AsinhStretch, LogStretch, SinhStretch, SqrtStr
 from astropy.visualization.mpl_normalize import ImageNormalize
 from matplotlib import rc
 rc('font', family='serif')
-rc('font',size = (9))
+rc('font',size = (8))
 
 _psfresid_pat_H = 'runHST/SDSS_z7/mcmc_out_mock_{}_point_source_subtracted.fits'
 _psfresid_pat_J = 'runJWST/SDSS_z7_F150W_4800s/mcmc_out_mock_{}_point_source_subtracted.fits'
 #_psfresid_pat = 'data/ivm_mock_{}_host_SN.fits'
 _mag_zp = {'F125W': 26.2303, 'F160W': 25.9463}
 
+#_stretch = LogStretch()
 _stretch = AsinhStretch()
 _stretch.a = (0.01 - 0.0001)/2 / (0.01+0.0001)
 _axis_range = [-0.9,0.9,-0.9,0.9]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
 #_xytix = [-3,-2, -1, 0, 1, 2,3]  # in arcsec
-_xytix = [-0.5, 0, 0.5]  # in arcsec
+_xytix = [-0.7, 0, 0.7]  # in arcsec
 
 gray_r = pp.cm.cmap_d['Spectral_r']
 
@@ -85,7 +86,7 @@ def plot_difference(resid,true,fullresid, ax):
     #psfresid_smooth=(resid - true)#/true   
     psfresid_smooth = gaussian_filter(resid-true, (1, 1))
     #psfresid_smooth = resid-true
-    ttle=r'PSF-Subtracted $-$ True Host'
+    ttle='PSF-Subtracted\n - True Host'
     filt = 'F160W'
     
     center = np.array(psfresid_smooth.shape)[::-1]/2
@@ -121,7 +122,7 @@ def plot_difference(resid,true,fullresid, ax):
     grid2.cbar_axes[0].set_ylabel('e/s')
     grid2.cbar_axes[0].yaxis.set_label_coords(4,0.5)
     if HST:
-       ax.set_title(ttle,fontsize=10)
+       ax.set_title(ttle)#,fontsize=10)
     return 
 
 
@@ -172,13 +173,13 @@ def plot_models(quasar, save_name=None):
       ttle='Residual'
       psfresid = fits.open(_psfresid_pat.format(quasar)[:-28]+'residual.fits')[0].data
     else:
-      ttle='PSF-Subtracted'
+      ttle='PSF\nSubtracted'
       psfresid = fits.getdata(_psfresid_pat.format(quasar))
    
     filt = 'F160W'
     #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
-    psfresid_smooth = gaussian_filter(psfresid, (1, 1))
-    #psfresid_smooth = psfresid
+    #psfresid_smooth = gaussian_filter(psfresid, (1, 1))
+    psfresid_smooth = psfresid
 
     center = np.array(psfresid.shape)[::-1]/2
     
@@ -199,13 +200,15 @@ def plot_models(quasar, save_name=None):
       cbar.set_ticklabels(_coltix)
       grid.cbar_axes[0].set_ylabel('mag arcsec$^{-2}$')
       grid.cbar_axes[0].set_xlabel('mag arcsec$^{-2}$')
+      grid.cbar_axes[0].yaxis.set_label_coords(4,0.5)
     else:
       cbar = pp.colorbar(im, cax=grid.cbar_axes[1], ticks=ticks)
       cbar.set_ticklabels(_coltix)
       grid.cbar_axes[1].set_ylabel('mag arcsec$^{-2}$')
       grid.cbar_axes[1].set_xlabel('mag arcsec$^{-2}$')
+      grid.cbar_axes[1].yaxis.set_label_coords(4,0.5)
     if ii<5:
-       grid[ii].set_title(ttle,fontsize=10)
+       grid[ii].set_title(ttle)#,fontsize=10)
     if convolved:
        grid[ii].text(0.35,-0.55,mark,color=mark_col,fontsize=20)
     #grid[ii].set_title(quasar)
@@ -223,11 +226,11 @@ if __name__ == '__main__':
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(9, 3))
-    grid = ImageGrid(fig, [0.07,0.1,0.67,0.80], nrows_ncols=(len(to_plot)*2,5), axes_pad=0.1,
+    fig = pp.figure(figsize=(7, 2.4))
+    grid = ImageGrid(fig, [0.07,0.1,0.67,0.76], nrows_ncols=(len(to_plot)*2,5), axes_pad=0.1,
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='edge',cbar_size=0.08)
-    grid2 = ImageGrid(fig, [0.695,0.118,0.35,0.765], nrows_ncols=(len(to_plot)*2,1), axes_pad=0.1,
+    grid2 = ImageGrid(fig, [0.705,0.12,0.32,0.72], nrows_ncols=(len(to_plot)*2,1), axes_pad=0.1,
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='single',cbar_size=0.08)
     jj=0 
@@ -307,8 +310,8 @@ if __name__ == '__main__':
         ax.xaxis.set_major_formatter(xy_format)
         #ax.yaxis.set_major_formatter(xy_format)
     #pp.subplots_adjust(left=0.1, bottom=0.1, right=0.92, top=0.92)
-    pp.savefig('residual_HSTvsJWST_fullPanels_2.pdf')
+    #pp.savefig('residual_HSTvsJWST_fullPanels_2.pdf')
     #pp.savefig('residual_HSTvsJWST_fullPanels.pdf')
-    #pp.savefig('residual_HSTvsJWST_fullPanels_noSmooth.pdf')
+    pp.savefig('residual_HSTvsJWST_fullPanels_2_noSmooth.pdf')
     pp.show()
     pp.close(fig)

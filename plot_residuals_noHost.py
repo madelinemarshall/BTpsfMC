@@ -1,5 +1,6 @@
 from __future__ import division
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as pp
 import pyregion
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -12,6 +13,7 @@ from astropy.visualization import AsinhStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from matplotlib import rc
 rc('font', family='serif')
+matplotlib.rcParams['font.size'] = (8)
 
 _stamp_pat = 'data/sci_mock_{}.fits'
 _psfresid_pat = 'runJWST/SDSS_z7_SN_noHost/mcmc_out_mock_{}_point_source_subtracted.fits'
@@ -48,8 +50,8 @@ def plot_models(quasar, filt, save_name=None):
    
    
     #psfresid_smooth = gaussian_filter(psfresid, (2, 2))
-    resid_smooth = gaussian_filter(psfresid, (2, 2))
-    true_smooth = gaussian_filter(stamp, (2, 2))
+    resid_smooth = gaussian_filter(psfresid, (1, 1))
+    true_smooth = gaussian_filter(stamp, (1, 1))
 
     center = np.array(psfresid.shape)[::-1]/2
     pxscale = 0.031/2 #arcsec
@@ -89,7 +91,7 @@ if __name__ == '__main__':
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
-    fig = pp.figure(figsize=(4.8, 2.5))
+    fig = pp.figure(figsize=(3.4, 1.8))
     #grid = ImageGrid(fig, 111, nrows_ncols=(2,len(to_plot)), axes_pad=0.1,
     grid = ImageGrid(fig, 111, nrows_ncols=(1,2), axes_pad=0.1,
                      share_all=True, label_mode='L',
@@ -110,9 +112,9 @@ if __name__ == '__main__':
         ax.xaxis.set_major_formatter(xy_format)
         ax.yaxis.set_major_formatter(xy_format)
 
-    grid[0].set_title('Quasar',fontsize=10)
-    grid[1].set_title('PSF Subtracted',fontsize=10)
-    pp.subplots_adjust(left=0.08, bottom=0.08, right=0.85, top=0.92)
+    grid[0].set_title('Quasar')
+    grid[1].set_title('PSF Subtracted')
+    pp.subplots_adjust(left=0.12, bottom=0.08, right=0.85, top=0.92)
     pp.savefig('residuals_noHost_JWST.pdf'.format(qq))
     pp.show() 
     pp.close(fig)

@@ -84,40 +84,63 @@ def plot_host_quasar(data,Lquasar,axes,err_axes,f,exp_time,ii,dust=False,title=N
   noisy_full_img = np.random.poisson(full_img)
   img_data = noisy_full_img / exp_time
 
-  # create background image object (cutoutwidth in pixels)
-  background_object = make_background.Background(zeropoint=zeropoint, pixel_scale=pixel_scale/super_samp, \
-aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius=aperture_radius, verbose = False)
-  img_bkg = background_object.create_background_image(Npixels*super_samp)
-  print('Sub-samp pixel scale: ',pixel_scale/super_samp)
+  if (not no_noise) and (not no_noise_incHost) and (not no_noise_onlyHost):
+    # create background image object (cutoutwidth in pixels)
+    background_object = make_background.Background(zeropoint=zeropoint, pixel_scale=pixel_scale/super_samp, \
+    aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius=aperture_radius, verbose = False)
+    img_bkg = background_object.create_background_image(Npixels*super_samp)
+    print('Sub-samp pixel scale: ',pixel_scale/super_samp)
 
-  img_bkg_data=img_bkg.bkg*nJy_to_es
-  bkg_sigma=background_object.pixel.noise_es*np.ones_like(img_bkg.bkg)
+    img_bkg_data=img_bkg.bkg*nJy_to_es
+    bkg_sigma=background_object.pixel.noise_es*np.ones_like(img_bkg.bkg)
 
-  #data_sigma=np.sqrt(img_data)
+    #data_sigma=np.sqrt(img_data)
   
-  y,x=np.mgrid[0:len(img_bkg.bkg),0:len(img_bkg.bkg)]
+    y,x=np.mgrid[0:len(img_bkg.bkg),0:len(img_bkg.bkg)]
 
-  #if filt_str=='F444W':
-  #  gauss=Gaussian2D(np.max(img_data)/5000,len(img_bkg.bkg)/2-1.5,len(img_bkg.bkg)/2-1.5,2,2)(x,y)
-  #elif filt_str=='F356W':
-  #  gauss=Gaussian2D(np.max(img_data)/5000,len(img_bkg.bkg)/2-1.5,len(img_bkg.bkg)/2-1.5,4,4)(x,y)
-  #else:
-  gauss=Gaussian2D(np.max(img_data)/5000,len(img_bkg.bkg)/2-1.5,len(img_bkg.bkg)/2-1.5,2,2)(x,y)
-  #print('Center loc: ',len(img_bkg.bkg)/2-1.5) 
-  ivm=1/((bkg_sigma*super_samp)**2+(gauss))
-  var=1/ivm
+    #if filt_str=='F444W':
+    #  gauss=Gaussian2D(np.max(img_data)/5000,len(img_bkg.bkg)/2-1.5,len(img_bkg.bkg)/2-1.5,2,2)(x,y)
+    #elif filt_str=='F356W':
+    #  gauss=Gaussian2D(np.max(img_data)/5000,len(img_bkg.bkg)/2-1.5,len(img_bkg.bkg)/2-1.5,4,4)(x,y)
+    #else:
+    gauss=Gaussian2D(np.max(img_data)/5000,len(img_bkg.bkg)/2-1.5,len(img_bkg.bkg)/2-1.5,2,2)(x,y)
+    #print('Center loc: ',len(img_bkg.bkg)/2-1.5) 
+    ivm=1/((bkg_sigma*super_samp)**2+(gauss))
+    var=1/ivm
 
-  mx=np.amax(img_data)
-  mx_var=np.amax(ivm)
+    mx=np.amax(img_data)
+    mx_var=np.amax(ivm)
  
-  img1 = axes.imshow(img_data+img_bkg_data,cmap='magma', norm=LogNorm(vmin = mx/10000, vmax=mx))
-  img2 = err_axes.imshow(ivm,cmap='magma', norm=LogNorm(vmin = mx_var/1e5, vmax=mx_var/10))#, vmin = mx -3, vmax=mx)
+    img1 = axes.imshow(img_data+img_bkg_data,cmap='magma', norm=LogNorm(vmin = mx/10000, vmax=mx))
+    img2 = err_axes.imshow(ivm,cmap='magma', norm=LogNorm(vmin = mx_var/1e5, vmax=mx_var/10))#, vmin = mx -3, vmax=mx)
  
-  hdu=fits.PrimaryHDU(img_data+img_bkg_data)
-  hdu_ivm=fits.PrimaryHDU(ivm)
-  #hdu_ivm=fits.PrimaryHDU(np.ones_like(data_sigma)*10000)
+    hdu=fits.PrimaryHDU(img_data+img_bkg_data)
+    hdu_ivm=fits.PrimaryHDU(ivm)
+    #hdu_ivm=fits.PrimaryHDU(np.ones_like(data_sigma)*10000)
   
-  if onlyHost:
+    axes.set_facecolor('black')
+
+    cax1 = fig.add_axes([0.9, 0.11, 0.02, 0.77])
+    cbar=fig.colorbar(img1, cax=cax1)#,norm=LogNorm(vmin=mx/1000,vmax=mx))#, ticks=[mx-3,mx-2,mx-1,mx])
+    cbar.ax.set_ylabel(r'$\log(I/I_{\rm{max}})$')
+
+    cax1 = err_fig.add_axes([0.9, 0.11, 0.02, 0.77])
+    cbar=fig.colorbar(img2, cax=cax1)#, ticks=[mx-3,mx-2,mx-1,mx])
+    cbar.ax.set_ylabel(r'$\log(I/I_{\rm{max}})$')
+  
+  if no_noise:
+      ##Only for exp_time 10000
+      hdu_nonoise=fits.PrimaryHDU(img_data)
+      hdu_nonoise.writeto('data/sci_mock_JWST_{}_{}_noNoise.fits'.format(filt_str,title),overwrite=True)
+  elif no_noise_incHost:
+      ##Only for exp_time 10000
+      hdu_nonoise=fits.PrimaryHDU(img_data)
+      hdu_nonoise.writeto('data/sci_mock_JWST_{}_{}_host_noNoise.fits'.format(filt_str,title),overwrite=True)
+  elif no_noise_onlyHost:
+      ##Only for exp_time 10000
+      hdu_nonoise=fits.PrimaryHDU(img_data)
+      hdu_nonoise.writeto('data/sci_mock_JWST_{}_{}_onlyHost_noNoise.fits'.format(filt_str,title),overwrite=True)
+  elif onlyHost:
     if title:
       if exp_time==10000:
         hdu.writeto('data/sci_mock_JWST_{}_{}_onlyHost.fits'.format(filt_str,title),overwrite=True)
@@ -139,10 +162,6 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
     else:
       hdu.writeto('data/sci_mock_JWST_{}_host.fits'.format(filt_str),overwrite=True)
       hdu_ivm.writeto('data/ivm_mock_JWST_{}_host.fits'.format(filt_str),overwrite=True)
-  elif no_noise:
-      ##Only for exp_time 10000
-      hdu_nonoise=fits.PrimaryHDU(img_data)
-      hdu_nonoise.writeto('data/sci_mock_JWST_{}_{}_noNoise.fits'.format(filt_str,title),overwrite=True)
   else:
     if title:
       hdu.writeto('data/sci_mock_JWST_{}_{}.fits'.format(filt_str,title),overwrite=True)
@@ -150,16 +169,7 @@ aperture_f_limit=aperture_f_limit, aperture_significance=ap_sig, aperture_radius
     else:
       hdu.writeto('data/sci_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
       hdu_ivm.writeto('data/ivm_mock_JWST_{}.fits'.format(filt_str),overwrite=True)
-  
-  axes.set_facecolor('black')
 
-  cax1 = fig.add_axes([0.9, 0.11, 0.02, 0.77])
-  cbar=fig.colorbar(img1, cax=cax1)#,norm=LogNorm(vmin=mx/1000,vmax=mx))#, ticks=[mx-3,mx-2,mx-1,mx])
-  cbar.ax.set_ylabel(r'$\log(I/I_{\rm{max}})$')
-
-  cax1 = err_fig.add_axes([0.9, 0.11, 0.02, 0.77])
-  cbar=fig.colorbar(img2, cax=cax1)#, ticks=[mx-3,mx-2,mx-1,mx])
-  cbar.ax.set_ylabel(r'$\log(I/I_{\rm{max}})$')
   return
 
 
@@ -253,11 +263,22 @@ if __name__=='__main__':
     #####HOST?
     host=True
     onlyHost=False
-    no_noise=True
+    no_noise=False
+    no_noise_incHost = False
+    no_noise_onlyHost = True
     if no_noise:
       host=False
       onlyHost=False
       print('__________QUASAR - NO NOISE__________')
+    if no_noise_incHost:
+      host=True
+      onlyHost=False
+      print('__________BOTH - NO NOISE__________')
+    if no_noise_onlyHost:
+      host=True
+      no_noise_incHost = False
+      onlyHost=True
+      print('__________HOST - NO NOISE__________')
     if host and onlyHost:
       print('__________ONLY HOST___________')
     elif host:
@@ -265,8 +286,8 @@ if __name__=='__main__':
     else:
       print('__________ONLY QUASAR___________')
 
-    #filters = [FLARE.filters.NIRCam_W[7]]
-    filters = [FLARE.filters.MIRI[1]]
+    filters = [FLARE.filters.NIRCam_W[4]]
+    #filters = [FLARE.filters.MIRI[1]]
     filt_str=(filters[0].split('.')[-1])
     print('filter: ',filt_str)
     F = FLARE.filters.add_filters(filters, new_lam = model.lam* (1.+z))

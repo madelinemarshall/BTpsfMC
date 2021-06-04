@@ -12,6 +12,7 @@ from astropy.visualization import AsinhStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from matplotlib import rc
 rc('font', family='serif')
+rc('font',size = (8))
 
 _psfresid_pat = 'runJWST/SDSS_z7_{}/mcmc_out_mock_{}_point_source_subtracted.fits'
 _psfresid_pat_F200W = 'runJWST/SDSS_z7_SN/mcmc_out_mock_{}_point_source_subtracted.fits'
@@ -59,16 +60,16 @@ def plot_models(quasar, filt, ii, save_name=None):
       #_pnorm = ImageNormalize(vmin=-0.00001*2.4, vmax=0.03*2.4, stretch=_stretch, clip=True)
       _axis_range = [-0.6,0.6,-0.6,0.6]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
       _coltix = np.array([26,27,28])  # in mag/arcsec**2
-      _stretch.a = (0.06 - 0.00005)/2 / (0.06+0.00005)
-      _pnorm = ImageNormalize(vmin=-0.00005, vmax=0.06, stretch=_stretch, clip=True)
+      _stretch.a = (0.05 - 0.0001)/2 / (0.05+0.0001)
+      _pnorm = ImageNormalize(vmin=-0.0001, vmax=0.05, stretch=_stretch, clip=True)
     elif filt in ['F560W','F770W']:
       pxscale = 0.11/2
       nfilt = 2
       #_axis_range = [-0.8,0.8,-0.8,0.8]
       _axis_range = [-0.6,0.6,-0.6,0.6]#[-2.5, 2.5, -2.5, 2.5]  # in arcsec
       _coltix = np.array([26,27,28])  # in mag/arcsec**2
-      _stretch.a = (0.1 - 0.00005)/2 / (0.1+0.00005)
-      _pnorm = ImageNormalize(vmin=-0.00005, vmax=0.1, stretch=_stretch, clip=True)
+      _stretch.a = (0.1 - 0.0001)/2 / (0.1+0.0001)
+      _pnorm = ImageNormalize(vmin=-0.0001, vmax=0.1, stretch=_stretch, clip=True)
     else:
       pxscale = 0.031/2
       nfilt = 3
@@ -104,22 +105,22 @@ def plot_models(quasar, filt, ii, save_name=None):
 if __name__ == '__main__':
     from sys import argv
     # import glob
-    to_plot = [2] #3[2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  20,  22,  23,  25,  27,  32,  36,  40,  43,  45,  46, 100]
+    to_plot = [3] #3[2,   3,   6,   7,   8,   9,  10,  12,  16, 18,  20,  22,  23,  25,  27,  32,  36,  40,  43,  45,  46, 100]
     filters = ['F115W','F150W','F200W','F277W','F356W','F444W','F560W','F770W']
 
     if 'test' in argv:
         to_plot = to_plot[0:1]
 
     for qq in to_plot:
-      fig = pp.figure(figsize=(9.8, 6))
+      fig = pp.figure(figsize=(6.8, 4.3))
       #grid = ImageGrid(fig, 111, nrows_ncols=(2,len(filters)), axes_pad=0.1,
       #               share_all=True, label_mode='L',
       #               cbar_location='right', cbar_mode='each')
-      grid1 = ImageGrid(fig, (0.08, 0.54, 0.4, 0.42), nrows_ncols=(2,3), axes_pad=[0.1,0.1],
+      grid1 = ImageGrid(fig, (0.09, 0.54, 0.38, 0.42), nrows_ncols=(2,3), axes_pad=[0.1,0.1],
                      share_all=True, label_mode='L',
                      cbar_location='right', cbar_mode='single',cbar_pad=0.1,cbar_size=0.1)
 
-      grid2 = ImageGrid(fig, (0.54, 0.54, 0.4, 0.42), nrows_ncols=(2,3), axes_pad=[0.1,0.1],
+      grid2 = ImageGrid(fig, (0.54, 0.54, 0.38, 0.42), nrows_ncols=(2,3), axes_pad=[0.1,0.1],
                      share_all=True,label_mode='L',
                      cbar_location='right', cbar_mode='single',cbar_pad=0.1,cbar_size=0.1)
 
@@ -173,8 +174,8 @@ if __name__ == '__main__':
 
       grid1[0].set_ylabel('PSF Subtracted')
       grid1[3].set_ylabel('True Host')
-      grid1[0].yaxis.set_label_coords(-0.5,0.5)
-      grid1[3].yaxis.set_label_coords(-0.5,0.5)
+      grid1[0].yaxis.set_label_coords(-0.55,0.5)
+      grid1[3].yaxis.set_label_coords(-0.55,0.5)
       grid3[0].set_ylabel('PSF Subtracted')
       grid3[2].set_ylabel('True Host')
       grid3[0].yaxis.set_label_coords(-0.5,0.5)
@@ -183,14 +184,14 @@ if __name__ == '__main__':
 
       mark=r'$\times$'
       mark_col='red'
-      grid3[1].text(0.35,-0.55,mark,color=mark_col,fontsize=22)
+      grid3[1].text(0.25,-0.55,mark,color=mark_col,fontsize=22)
     
       mark=r'$\checkmark$'
       mark_col='limegreen'
       for ii in range(0,3):
-        grid1[ii].text(0.35,-0.55,mark,color=mark_col,fontsize=22)
-        grid2[ii].text(0.35,-0.55,mark,color=mark_col,fontsize=22)
-      grid3[0].text(0.35,-0.55,mark,color=mark_col,fontsize=22)
+        grid1[ii].text(0.25,-0.55,mark,color=mark_col,fontsize=22)
+        grid2[ii].text(0.25,-0.55,mark,color=mark_col,fontsize=22)
+      grid3[0].text(0.25,-0.55,mark,color=mark_col,fontsize=22)
       #pp.subplots_adjust(left=0.08, bottom=0.1, right=0.92, top=0.95)
       pp.savefig('residuals_filter_comparison_MIRI_SDSS_{}.pdf'.format(qq))
       pp.show() 

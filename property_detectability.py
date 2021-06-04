@@ -9,7 +9,7 @@ import pandas as pd
 import calculate_BIC
 import matplotlib
 from scipy import stats
-matplotlib.rcParams['font.size'] = (9)
+matplotlib.rcParams['font.size'] = (8)
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
@@ -48,6 +48,7 @@ def hist_x(data,mask,ax,**kwargs):
     ax.set_xlim(bins_min-0.05,bins_max+0.05)
     ax.set_ylim(-0.05,1.171)
     ax.set_yticks([0,1])
+    ax.set_yticklabels(['0',''])
     ax.tick_params(axis='both', direction='in')
     return
 
@@ -101,7 +102,7 @@ def hist_y(data,mask,ax,**kwargs):
     ax.barh(bins_min+bins_width*(0.5+np.arange(0,nbins)),width=frac,height=bins_width,edgecolor='k',facecolor='#d6f1ff',xerr=[err,err_up],capsize=3,ecolor=[0.5,0.5,0.5])#[0.8,0.8,0.8])
     #ax.plot(frac,bins_min+bins_width*(1/2+np.arange(0,6)),'ro',zorder=99)#, linewidth=1.2,marker='o',**kwargs)
     ax.set_ylim(bins_min-0.02,bins_max+0.02)
-    ax.set_xlim(-0.05,1.14)
+    ax.set_xlim(-0.05,1.135)
     ax.set_xticks([0,1])
     ax.tick_params(axis='both', direction='in')
     return
@@ -147,12 +148,12 @@ if __name__=='__main__':
     for filt in ['F115W','F150W','F200W','F277W','F356W','F444W']:
       detectability+=np.array(df[filt],dtype=int)
     easy=detectability>4
-    print(df[easy])
-    print(df[~easy])
+    #print(df[easy])
+    #print(df[~easy])
 
-    if False: #Full-pane galaxy properties
+    if True: #Full-pane galaxy properties
     
-      fig,ax=plt.subplots(3,2,figsize=(4,6.2),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,0.3],'hspace':0,'wspace':0,'bottom':0.05,'left':0.2,'right':0.95,'top':0.98})   
+      fig,ax=plt.subplots(3,2,figsize=(3.2,4.8),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,0.3],'hspace':0,'wspace':0,'bottom':0.07,'left':0.2,'right':0.95,'top':0.98})   
     
       labs={'BHMass':r'$\log(M_{\rm{BH}}/M_\odot)$','SFR':r'$\log(\rm{SFR}/M_\odot \rm{yr}^{-1})$'}
       for ii,prop in enumerate(['SFR']): 
@@ -181,6 +182,7 @@ if __name__=='__main__':
         ax[ii,1].plot(np.log10(df['StellarMass'])[~easy],(df[prop])[~easy],'ko',markerfacecolor='w',label='Undetectable')
         hist_x(np.log10(df['StellarMass']),easy,ax[ii+1,1],color='k')
         ax[ii+1,1].set_ylim(-0.05,1.14)
+        ax[ii+1,1].set_yticklabels(['0',''])
         hist_y(df[prop],easy,ax[ii,0],color='k')
     
         bins_min=np.amin(np.log10(df['StellarMass']))
@@ -201,30 +203,33 @@ if __name__=='__main__':
         plt.savefig('properties_stellarMass.pdf') 
    
 
-    if False: #Radius 3-pane
+    if True: #Radius 3-pane
       OH_rad=np.zeros(len(df))
       for jj,ii in enumerate(df['Index']):
         if ii!=41:
-          _pattern_OH= 'runJWST/SDSS_z7_SN_onlyHost/mcmc_out_mock_JWST_SDSS_{}_residual.fits'
+          #_pattern_OH= 'runJWST/SDSS_z7_SN_onlyHost/mcmc_out_mock_JWST_SDSS_{}_residual.fits'
+          _pattern_OH= 'runJWST/SDSS_z7_F277W/mcmc_out_mock_JWST_SDSS_{}_residual.fits'
           head_OH = fits.getheader(_pattern_OH.format(ii))
-          OH_rad[jj]=head_OH['1SER_RE'].split(' ')[0]
+          OH_rad[jj]=head_OH['2SER_RE'].split(' ')[0]
       
       if filt in ['F277W','F356W','F444W']:
         pxscale = 0.063/2 #arcsec
       else:
         pxscale = 0.031/2
+     
+      pxscale *= 0.269/0.05 #to kpc
     
       OH_rad*=pxscale
 
       xdata=df['Radius']
       ydata=OH_rad
     
-      fig,ax=plt.subplots(2,2,figsize=(4,3.3),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.1,'left':0.2,'right':0.95,'top':0.95})   
-      three_pane_plot(xdata,ydata,easy,ax,0.02,0.002)
+      fig,ax=plt.subplots(2,2,figsize=(3.2,2.8),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.15,'left':0.2,'right':0.95,'top':0.95})   
+      three_pane_plot(xdata,ydata,easy,ax,0.025,0.025)
       ax[1,1].set_xlabel(r'$R_{0.5}/\rm{kpc}$')
-      ax[0,0].set_ylabel(r'F200W Sersic Radius (kpc)')
+      ax[0,0].set_ylabel(r'F277W Sersic Radius (kpc)')
       ax[0,0].set_xlabel('Success\nRate')
-      ax[0,1].legend(loc='lower right')
+      #ax[0,1].legend(loc='lower right')
       plt.savefig('properties_radius.pdf') 
       plt.show()
 
@@ -235,12 +240,12 @@ if __name__=='__main__':
       #ax[1,2].plot(df['MUV_AGN']+df['tau_UV_AGN']-df['MUV_gal_dust'],detectability,'ko')
       #plt.show()
     
-    if False: #Magnitude 3-pane
+    if True: #Magnitude 3-pane
       xdata=df['MUV_AGN_dust']
       ydata=df['MUV_gal_dust']
     
-      fig,ax=plt.subplots(2,2,figsize=(4,3.3),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.1,'left':0.2,'right':0.95,'top':0.95})   
-      three_pane_plot(xdata,ydata,easy,ax,0.08,0.08)
+      fig,ax=plt.subplots(2,2,figsize=(3.2,2.8),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.15,'left':0.2,'right':0.95,'top':0.95})   
+      three_pane_plot(xdata,ydata,easy,ax,0.2,0.2)
       ax[1,1].set_xlabel(r'$M_{\rm{UV,~ AGN}}$')
       ax[0,0].set_ylabel(r'$M_{\rm{UV,~ host}}$')
       ax[0,0].set_xlabel('Success\nRate')
@@ -252,8 +257,8 @@ if __name__=='__main__':
       plt.show()
   
  
-    if False: #MAGN vs Mgal and Mgal-MAGN
-      fig,ax=plt.subplots(3,2,figsize=(4,6.2),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,0.3],'hspace':0,'wspace':0,'bottom':0.05,'left':0.2,'right':0.95,'top':0.98})   
+    if True: #MAGN vs Mgal and Mgal-MAGN
+      fig,ax=plt.subplots(3,2,figsize=(3.2,4.8),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,0.3],'hspace':0,'wspace':0,'bottom':0.15,'left':0.2,'right':0.95,'top':0.98})   
      
       xdata=df['MUV_AGN_dust']
       ydata=df['MUV_gal_dust']
@@ -283,6 +288,7 @@ if __name__=='__main__':
       ax[1,1].plot(xdata[~easy],ydata[~easy],'ko',markerfacecolor='w',label='Undetectable')
       hist_x(xdata,easy,ax[2,1],color='k')
       ax[2,1].set_ylim(-0.05,1.14)
+      ax[2,1].set_yticklabels(['0',''])
       hist_y(ydata,easy,ax[1,0],color='k')
    
       bins_min=np.amin(xdata)
@@ -310,7 +316,7 @@ if __name__=='__main__':
    
     if True:#BHAR,Eddington ratio
     
-      fig,ax=plt.subplots(3,2,figsize=(4,6.4),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,0.3],'hspace':0,'wspace':0,'bottom':0.06,'left':0.2,'right':0.95,'top':0.98})   
+      fig,ax=plt.subplots(3,2,figsize=(3.2,4.8),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,1,0.3],'hspace':0,'wspace':0,'bottom':0.1,'left':0.2,'right':0.95,'top':0.98})   
     
       xdata=np.log10(df['BHMass'])
       ydata=np.array(BHAR)
@@ -337,7 +343,8 @@ if __name__=='__main__':
       ax[1,1].plot(xdata[easy],ydata[easy],'ko',label='Detectable')
       ax[1,1].plot(xdata[~easy],ydata[~easy],'ko',markerfacecolor='w',label='Undetectable')
       hist_x(xdata,easy,ax[2,1],color='k')
-      ax[2,1].set_ylim(-0.05,1.14)
+      ax[2,1].set_ylim(-0.05,1.152)
+      ax[2,1].set_yticklabels(['0',''])
       hist_y(ydata,easy,ax[1,0],color='k')
    
       bins_min=np.amin(xdata)
@@ -358,11 +365,11 @@ if __name__=='__main__':
       plt.savefig('properties_BHmassAccretion.pdf') 
       plt.show()
  
-    if False:#intrinsic MAGN-Mgal
+    if True:#intrinsic MAGN-Mgal
       xdata=df['MUV_AGN_dust']-1.086*df['tau_UV_AGN']
       ydata=df['MUV_gal']
     
-      fig,ax=plt.subplots(2,2,figsize=(4,3.3),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.1,'left':0.2,'right':0.95,'top':0.95})   
+      fig,ax=plt.subplots(2,2,figsize=(3.2,2.8),gridspec_kw={'width_ratios':[0.3,1],'height_ratios':[1,0.3],'hspace':0,'wspace':0,'bottom':0.15,'left':0.2,'right':0.95,'top':0.95})   
  
       three_pane_plot(xdata,ydata,easy,ax,0.08,0.08)
       ax[1,1].set_xlabel(r'$M_{\rm{UV,~ AGN~ (intrinsic)}}$')

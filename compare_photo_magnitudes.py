@@ -89,7 +89,7 @@ if __name__=='__main__':
   wavelength={'F115W':1.15,'F150W':1.50,'F200W':2.00,'F277W':2.77,'F356W':3.56,'F444W':4.44}
   
   if host:
-    fig1,ax=plt.subplots(3,1,figsize=(3,8),sharey=True,gridspec_kw={'hspace':0.3})
+    fig1,ax=plt.subplots(3,1,figsize=(3,6.6),sharey=True,gridspec_kw={'hspace':0.3})
   if AGN:
     fig2,ax2=plt.subplots(1,2)
 
@@ -234,15 +234,25 @@ if host:
   fig1.savefig('compare_photo_magnitudes.pdf')
 
 if AGN:
-  ax2[0].legend()
+  ax2[0].legend(fontsize='small')
   ax2[0].set_ylim([0,14])
   ax2[1].set_ylim([0,14])
      
-  fig3,ax3=plt.subplots()
   flt=np.array(fracAGN).flatten()
-  print(len(flt),len(flt[flt>1]))
-  print(np.median(flt),np.min(flt),np.max(flt),np.percentile(flt,[1,5,10,90,95,99]))
-  print(1-np.median(flt),1-np.min(flt),1-np.max(flt),1-np.percentile(flt,[1,5,10,90,95,99]))
+  print('ALL FILTERS COMBINED')
+  print('Median, Min, Max, 5pct, 95pct, 5pct-median, 95pct-median')
+  print(np.median(flt),np.min(flt),np.max(flt),np.percentile(flt,[5,95]),np.percentile(flt,[5,95])-np.median(flt))
+  #print(1-np.median(flt),1-np.min(flt),1-np.max(flt),1-np.percentile(flt,[1,5,10,90,95,99]))
+  print('SW FILTERS COMBINED')
+  flt=np.array(fracAGN[0:3]).flatten()
+  print(np.median(flt),np.min(flt),np.max(flt),np.percentile(flt,[5,95]),np.percentile(flt,[5,95])-np.median(flt))
+  #print(1-np.median(flt),1-np.min(flt),1-np.max(flt),1-np.percentile(flt,[1,5,10,90,95,99]))
+  print('LW FILTERS COMBINED')
+  flt=np.array(fracAGN[3:]).flatten()
+  print(np.median(flt),np.min(flt),np.max(flt),np.percentile(flt,[5,95]),np.percentile(flt,[5,95])-np.median(flt))
+  #print(1-np.median(flt),1-np.min(flt),1-np.max(flt),1-np.percentile(flt,[1,5,10,90,95,99]))
+  
+  fig3,ax3=plt.subplots()
   ax3.hist(flt,histtype='step',range=(0.955,1),label=filt)
 plt.show()
 
