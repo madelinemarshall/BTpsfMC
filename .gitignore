@@ -1,0 +1,6 @@
+*.fits
+*.err
+*.out
+*.pdf
+*.pkl
+*.npy
