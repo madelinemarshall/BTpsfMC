@@ -205,9 +205,9 @@ if __name__=='__main__':
     axes3[ff].set_xlim(26.2,22.8)
     axes3[ff].set_ylim(26.2,22.8)
   
-  axes3[0].text(25,26.15,'Median: {0:.3f}'.format(np.median(ext_dict(mag_sersic_fit)-ext_dict(mag_true))))
-  axes3[1].text(25.15,26.15,'Median:  {0:.3f}'.format(np.median(ext_dict(mag_orig)-ext_dict(mag_true))))
-  axes3[2].text(24.95,26.15,'Median: {0:.3f}'.format(np.median(ext_dict(mag_gauss)-ext_dict(mag_true))))
+  axes3[0].text(24.88,26.15,'Median: {0:.3f}'.format(np.median(ext_dict(mag_sersic_fit)-ext_dict(mag_true))))
+  axes3[1].text(25.03,26.15,'Median:  {0:.3f}'.format(np.median(ext_dict(mag_orig)-ext_dict(mag_true))))
+  axes3[2].text(24.85,26.15,'Median: {0:.3f}'.format(np.median(ext_dict(mag_gauss)-ext_dict(mag_true))))
   axes3[0].text(24.1,25.85,r'$\sigma$: {0:.3f}'.format(np.std(ext_dict(mag_sersic_fit)-ext_dict(mag_true))))
   axes3[1].text(24.1,25.85,r'$\sigma$: {0:.3f}'.format(np.std(ext_dict(mag_orig)-ext_dict(mag_true))))
   axes3[2].text(24.1,25.85,r'$\sigma$: {0:.3f}'.format(np.std(ext_dict(mag_gauss)-ext_dict(mag_true))))
